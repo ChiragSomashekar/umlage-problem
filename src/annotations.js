@@ -6,28 +6,44 @@
 // Tone rule: wars are quiet historical footnotes (muted); the Babyboom is
 // the piece's protagonist and alone carries the accent.
 
+// Cohort windows are fitted to the drawn bars, not to textbook dates:
+// in the UN-smoothed series the WWI notch is 1916–1919 and the WWII trough
+// is 1945–1948 (deepest 1946 — the 1944 cohort is still strong).
 export const ANNOTATIONS = [
   {
     id: "wwi",
     birthYear: 1917,
     tone: "quiet",
     title: () => ["Birth deficit of the", "First World War"],
-    detail: "BORN 1915–1919",
+    detail: "BORN 1916–1919",
   },
   {
     id: "wwii",
-    birthYear: 1945,
+    birthYear: 1946,
     tone: "quiet",
     title: () => ["Birth deficit of the", "Second World War"],
-    detail: "BORN 1944–1946",
+    detail: "BORN 1945–1948",
   },
   {
     id: "boom",
     birthYear: 1962,
     tone: "accent",
     title: () => ["The Babyboom generation"],
+    // anchor age 74 = year 2036, when the youngest boomers (b. 1969) are 67
     detail: (age) =>
-      age >= 65 ? "BORN 1955–1969 · NOW RETIRING" : "BORN 1955–1969",
+      age >= 74
+        ? "BORN 1955–1969 · RETIRED"
+        : age >= 65
+          ? "BORN 1955–1969 · NOW RETIRING"
+          : "BORN 1955–1969",
+  },
+  {
+    id: "pillenknick",
+    birthYear: 1972,
+    tone: "quiet",
+    // quotes on purpose: the vernacular name for the notch, not a causal claim
+    title: () => ["The ‘Pillenknick’ —", "births fall by a third"],
+    detail: "BORN 1968–1975",
   },
 ];
 

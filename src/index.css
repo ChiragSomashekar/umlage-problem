@@ -1,10 +1,12 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,640&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,560;0,9..144,640;1,9..144,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
 
 /* CSS mirror of src/tokens.js — keep the two in sync by hand */
 :root {
   --paper: #f7f3ec;
   --ink: #21201c;
-  --muted: #8b8378;
+  --muted: #6f675c;
+  --male: #4a6a5a;
+  --female: #c08552;
   --accent: #b5432e;
   --display: "Fraunces", Georgia, serif;
   --body: "IBM Plex Sans", system-ui, sans-serif;
@@ -45,9 +47,22 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
-.stage input[type="range"] {
-  width: 100%;
-  margin-bottom: 8px;
+/* Slider row: the whole interaction — end labels tell the range at a glance */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.slider-year {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.slider-row input[type="range"] {
+  flex: 1;
 }
 
 .caption-band {
@@ -103,8 +118,8 @@ h2 {
   font-size: 1.0625rem;
   line-height: 1.55;
   color: var(--muted);
-  max-width: 54ch;
-  margin-bottom: 36px;
+  max-width: 60ch;
+  margin: 10px 0 0;
 }
 
 .source {
@@ -112,6 +127,7 @@ h2 {
   font-size: 0.72rem;
   line-height: 1.5;
   color: var(--muted);
+  max-width: 60ch;
   font-variant-numeric: tabular-nums;
 }
 
@@ -120,32 +136,50 @@ svg text {
   font-variant-numeric: tabular-nums;
 }
 
+/* The input itself is a 44px touch strip; the visible 4px line is painted
+   on the track pseudo-element. (2px-tall hit areas are unusable on phones.) */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
-  height: 2px;
-  background: color-mix(in srgb, var(--muted) 35%, transparent);
-  border-radius: 1px;
-  outline: none;
+  height: 44px;
+  background: transparent;
+  margin: 0;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: color-mix(in srgb, var(--muted) 40%, transparent);
+  border-radius: 2px;
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 22px;
+  height: 22px;
+  margin-top: -9px; /* center the thumb on the 4px track */
   border-radius: 50%;
   background: var(--accent);
-  border: 2.5px solid var(--paper);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent);
+  border: 3px solid var(--paper);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--accent) 60%, transparent);
   cursor: grab;
 }
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: color-mix(in srgb, var(--muted) 40%, transparent);
+  border-radius: 2px;
+}
 input[type="range"]::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: var(--accent);
-  border: 2.5px solid var(--paper);
+  border: 3px solid var(--paper);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--accent) 60%, transparent);
   cursor: grab;
+}
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -169,6 +203,9 @@ input[type="range"]::-moz-range-thumb {
     font-size: 1.15rem;
   }
   .caption-band {
-    min-height: 64px;
+    min-height: 96px; /* two wrapped caption lines + readout, no reflow */
+  }
+  .dek {
+    font-size: 0.95rem;
   }
 }

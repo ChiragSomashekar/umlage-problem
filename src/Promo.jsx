@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Pyramid } from "./components/Pyramid";
 import { COLORS } from "./tokens";
+import ratio from "./data/ratio.json";
 
 // LinkedIn promo mode (open with ?promo).
 // Stage is 540×675 CSS px → record on a retina screen = 1080×1350 (4:5).
@@ -11,12 +12,17 @@ const STAGE_W = 540;
 const STAGE_H = 675;
 const CHART_MARGINS = { top: 36, right: 20, bottom: 20, left: 38 };
 
+// Captions must agree with the ticking readout below them — no rounded
+// claims the chart itself contradicts. The film now reaches 2100: the urn
+// is the strongest frame, and the card promises 1950–2100.
 const BEATS = [
-  { scene: "pyr", year: 1950, hold: 3200, caption: "In 1950, seven German workers stood behind every pensioner." },
+  { scene: "pyr", year: 1950, hold: 3400, caption: "In 1950, nearly seven Germans of working age stood behind every person over 65." },
   { scene: "pyr", scrubTo: 2026, ms: 9000, caption: "Then the country grew older." },
-  { scene: "pyr", year: 2026, hold: 3500, caption: "Today: two workers per pensioner." },
-  { scene: "pyr", scrubTo: 2060, ms: 4500, caption: "And the Babyboomers are only beginning to retire." },
-  { scene: "pyr", year: 2060, hold: 3000, caption: "By 2060: fewer than 1.8." },
+  { scene: "pyr", year: 2026, hold: 3500, caption: "Today: 2.4 people of working age per person over 65." },
+  { scene: "pyr", scrubTo: 2060, ms: 4500, caption: "Now the Babyboom generation moves into retirement." },
+  { scene: "pyr", year: 2060, hold: 2600, caption: "By 2060: 1.7." },
+  { scene: "pyr", scrubTo: 2100, ms: 3200, caption: "The century ends in the shape demographers call an urn." },
+  { scene: "pyr", year: 2100, hold: 2800, caption: "The century ends in the shape demographers call an urn." },
   { scene: "end", hold: 6000 },
 ];
 
@@ -60,6 +66,7 @@ export default function Promo() {
   }, []);
 
   const beat = BEATS[beatIdx];
+  const r = ratio.find((d) => d.year === year);
 
   return (
     <div
@@ -75,13 +82,21 @@ export default function Promo() {
         flexDirection: "column",
       }}
     >
-      {/* header */}
+      {/* header — same optical cut and tracking as the page h1 */}
       <div style={{ padding: "22px 24px 0" }}>
-        <div style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 26, fontWeight: 560 }}>
+        <div
+          style={{
+            fontFamily: "'Fraunces', Georgia, serif",
+            fontSize: 26,
+            fontWeight: 560,
+            letterSpacing: "-0.015em",
+            fontVariationSettings: "'opsz' 90",
+          }}
+        >
           Das Umlage-Problem
         </div>
         <div style={{ marginTop: 4, fontSize: 12, color: COLORS.muted }}>
-          Germany's pension math, 1950–2100
+          Germany&rsquo;s pension math, 1950&ndash;2100
         </div>
       </div>
 
@@ -105,11 +120,20 @@ export default function Promo() {
               padding: 32,
             }}
           >
-            <div style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 40, fontWeight: 560, lineHeight: 1.05 }}>
+            <div
+              style={{
+                fontFamily: "'Fraunces', Georgia, serif",
+                fontSize: 40,
+                fontWeight: 560,
+                lineHeight: 1.05,
+                letterSpacing: "-0.015em",
+                fontVariationSettings: "'opsz' 90",
+              }}
+            >
               Das Umlage-Problem
             </div>
             <div style={{ marginTop: 14, fontSize: 15, color: COLORS.muted }}>
-              Germany&apos;s pension math, 1950&ndash;2100
+              Germany&rsquo;s pension math, 1950&ndash;2100
             </div>
             <div style={{ marginTop: 40, fontSize: 13, fontWeight: 600, letterSpacing: "0.1em", color: COLORS.accent }}>
               FULL INTERACTIVE → IN THE COMMENTS
@@ -121,12 +145,21 @@ export default function Promo() {
         )}
       </div>
 
-      {/* caption band */}
-      <div style={{ minHeight: 108, padding: "0 26px 26px", display: "flex", alignItems: "flex-end" }}>
+      {/* caption band + ticking readout — the counter counting down during
+          the scrubs is what holds a silent feed viewer */}
+      <div
+        style={{
+          minHeight: 122,
+          padding: "0 26px 24px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-end",
+        }}
+      >
         <AnimatePresence mode="wait">
           {beat.caption && (
             <motion.p
-              key={beatIdx}
+              key={beat.caption}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -143,6 +176,20 @@ export default function Promo() {
             </motion.p>
           )}
         </AnimatePresence>
+        {beat.scene === "pyr" && r && (
+          <p
+            style={{
+              marginTop: 10,
+              fontSize: 11.5,
+              fontWeight: 600,
+              letterSpacing: "0.12em",
+              color: COLORS.accent,
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {r.ratio.toFixed(1)} AGED 20&ndash;64 PER PERSON 65+
+          </p>
+        )}
       </div>
     </div>
   );

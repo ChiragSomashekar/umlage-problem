@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { Pyramid } from "./components/Pyramid";
 import { useDimensions } from "./hooks/use-dimensions";
 import ratio from "./data/ratio.json";
@@ -11,12 +11,15 @@ const GUTTER_MARGINS = { top: 40, right: 240, bottom: 32, left: 44 };
 const COMPACT_MARGINS = { top: 40, right: 20, bottom: 28, left: 38 };
 
 // Era captions — same narrative voice as the promo film, driven by the slider.
+// Windows must agree with the readout printed beneath them: the ratio first
+// rounds to "two" in 2025, and the last Babyboom cohort (b. 1969) is retired
+// by 2036 — captions may never contradict the piece's own numbers.
 const captionFor = (year) => {
-  if (year < 1958) return "In 1950, seven German workers stood behind every pensioner.";
-  if (year < 2011) return "Then the country grew older.";
-  if (year < 2036) return "Today: two workers per pensioner.";
-  if (year < 2070) return "And the Babyboomers are only beginning to retire.";
-  return "By century's end, the pyramid is an urn.";
+  if (year < 1958) return "In 1950, nearly seven Germans of working age stood behind every person over 65.";
+  if (year < 2025) return "Then the country grew older.";
+  if (year < 2036) return "Now the Babyboom generation moves into retirement.";
+  if (year < 2070) return "The boom has retired. The ratio stays below two.";
+  return "By century’s end, the pyramid takes the shape demographers call an urn.";
 };
 
 export default function App() {
@@ -33,21 +36,33 @@ export default function App() {
   const caption = captionFor(year);
 
   return (
+    <MotionConfig reducedMotion="user">
     <main>
       <div className="stage">
         <header className="stage-head">
           <h1>Das Umlage-Problem</h1>
-          <p className="subtitle">Germany&apos;s pension math, 1950&ndash;2100</p>
+          <p className="subtitle">Germany&rsquo;s pension math, 1950&ndash;2100</p>
+          <p className="dek">
+            In Germany&rsquo;s pay-as-you-go pension system &mdash; the
+            Umlageverfahren &mdash; each year&rsquo;s workers fund that
+            year&rsquo;s pensioners. This ratio drives the whole machine. Drag
+            through 150 years of it.
+          </p>
         </header>
 
-        <input
-          type="range"
-          min={1950}
-          max={2100}
-          value={year}
-          onChange={(e) => setYear(Number(e.target.value))}
-          aria-label="Year"
-        />
+        <div className="slider-row">
+          <span className="slider-year">1950</span>
+          <input
+            type="range"
+            min={1950}
+            max={2100}
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+            aria-label="Year"
+            aria-valuetext={`${year} — ${r ? r.ratio.toFixed(1) : ""} people aged 20 to 64 per person 65 and older`}
+          />
+          <span className="slider-year">2100</span>
+        </div>
 
         <div ref={chartRef}>
           <Pyramid
@@ -74,17 +89,19 @@ export default function App() {
           </AnimatePresence>
           {r && (
             <p className="ratio-readout">
-              {r.ratio.toFixed(1)} WORKERS PER PENSIONER &middot; {(r.total / 1000).toFixed(1)}M PEOPLE
+              {r.ratio.toFixed(1)} AGED 20&ndash;64 PER PERSON 65+ &middot; {(r.total / 1000).toFixed(1)}M PEOPLE
             </p>
           )}
         </div>
 
         <p className="source">
           Data: UN World Population Prospects 2024, medium variant. Years after
-          2024 are projections. Workers = ages 20&ndash;64, pensioners = 65+
-          (own calculation).
+          2024 are projections. Ratio = residents aged 20&ndash;64 per resident
+          65+ &mdash; own calculation, a demographic measure, not the statutory
+          scheme&rsquo;s contributor-to-pensioner ratio.
         </p>
       </div>
     </main>
+    </MotionConfig>
   );
 }
