@@ -93,7 +93,7 @@ export default function Promo() {
             fontVariationSettings: "'opsz' 90",
           }}
         >
-          Das Umlage-Problem
+          The Umlage Problem
         </div>
         <div style={{ marginTop: 4, fontSize: 12, color: COLORS.muted }}>
           Germany&rsquo;s pension math, 1950&ndash;2100
@@ -130,7 +130,7 @@ export default function Promo() {
                 fontVariationSettings: "'opsz' 90",
               }}
             >
-              Das Umlage-Problem
+              The Umlage Problem
             </div>
             <div style={{ marginTop: 14, fontSize: 15, color: COLORS.muted }}>
               Germany&rsquo;s pension math, 1950&ndash;2100

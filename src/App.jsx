@@ -40,13 +40,12 @@ export default function App() {
     <main>
       <div className="stage">
         <header className="stage-head">
-          <h1>Das Umlage-Problem</h1>
+          <h1>The Umlage Problem</h1>
           <p className="subtitle">Germany&rsquo;s pension math, 1950&ndash;2100</p>
           <p className="dek">
-            In Germany&rsquo;s pay-as-you-go pension system &mdash; the
-            Umlageverfahren &mdash; each year&rsquo;s workers fund that
-            year&rsquo;s pensioners. This ratio drives the whole machine. Drag
-            through 150 years of it.
+            The Umlage is Germany&rsquo;s pay-as-you-go pension system:
+            today&rsquo;s workers fund today&rsquo;s pensioners. Drag through
+            150 years of it.
           </p>
         </header>
 
@@ -59,21 +58,13 @@ export default function App() {
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
             aria-label="Year"
-            aria-valuetext={`${year} — ${r ? r.ratio.toFixed(1) : ""} people aged 20 to 64 per person 65 and older`}
+            aria-valuetext={`${year}: ${r ? r.ratio.toFixed(1) : ""} people aged 20 to 64 per person 65 and older`}
           />
           <span className="slider-year">2100</span>
         </div>
 
-        <div ref={chartRef}>
-          <Pyramid
-            year={year}
-            width={chartW}
-            height={chartH}
-            margins={isWide ? GUTTER_MARGINS : COMPACT_MARGINS}
-            showAnnotations={isWide}
-          />
-        </div>
-
+        {/* Takeaway ABOVE the chart (SWD doctrine) and right under the
+            slider, where the eyes are while scrubbing */}
         <div className="caption-band">
           <AnimatePresence mode="wait">
             <motion.p
@@ -94,11 +85,20 @@ export default function App() {
           )}
         </div>
 
+        <div ref={chartRef}>
+          <Pyramid
+            year={year}
+            width={chartW}
+            height={chartH}
+            margins={isWide ? GUTTER_MARGINS : COMPACT_MARGINS}
+            showAnnotations={isWide}
+          />
+        </div>
+
         <p className="source">
-          Data: UN World Population Prospects 2024, medium variant. Years after
+          Data: UN World Population Prospects 2024, medium variant; years after
           2024 are projections. Ratio = residents aged 20&ndash;64 per resident
-          65+ &mdash; own calculation, a demographic measure, not the statutory
-          scheme&rsquo;s contributor-to-pensioner ratio.
+          65+, own calculation, not the pension scheme&rsquo;s contributor ratio.
         </p>
       </div>
     </main>

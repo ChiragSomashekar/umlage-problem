@@ -41,9 +41,10 @@ export const ANNOTATIONS = [
     id: "pillenknick",
     birthYear: 1972,
     tone: "quiet",
-    // quotes on purpose: the vernacular name for the notch, not a causal claim
-    title: () => ["The ‘Pillenknick’ —", "births fall by a third"],
-    detail: "BORN 1968–1975",
+    // English title; the German nickname lives in the detail line, quoted
+    // because it is the vernacular name for the notch, not a causal claim
+    title: () => ["Births fall by a third"],
+    detail: "BORN 1968–1975 · ‘PILLENKNICK’",
   },
 ];
 

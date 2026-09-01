@@ -66,8 +66,8 @@ main {
 }
 
 .caption-band {
-  min-height: 74px;
-  margin-top: 4px;
+  min-height: 74px; /* reserves both caption lines so the chart never jumps */
+  margin-bottom: 6px;
 }
 
 .caption {
@@ -115,19 +115,19 @@ h2 {
 }
 
 .dek {
-  font-size: 1.0625rem;
-  line-height: 1.55;
+  font-size: 0.95rem;
+  line-height: 1.5;
   color: var(--muted);
-  max-width: 60ch;
-  margin: 10px 0 0;
+  max-width: 68ch;
+  margin: 8px 0 0;
 }
 
 .source {
-  margin-top: 28px;
+  margin-top: 14px;
   font-size: 0.72rem;
   line-height: 1.5;
   color: var(--muted);
-  max-width: 60ch;
+  max-width: 92ch;
   font-variant-numeric: tabular-nums;
 }
 
