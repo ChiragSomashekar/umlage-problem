@@ -102,13 +102,13 @@ export default function Ridge() {
           <header className="stage-head">
             <h1>One Hundred Fifty Years of&nbsp;Germany</h1>
             <p className="subtitle">
-              Every line is one year. Every peak is a generation. 1950&ndash;2100.
+              Every line is one year of Germany. 1950&ndash;2100.
             </p>
             <p className="dek">
-              People alive at every age, newborns on the left to 100 on the
-              right. Years stack toward 2100 at the back, so a generation
-              travels right as it ages. The rust thread follows the cohort
-              born in 1964, the largest Germany ever had.
+              Left: newborns. Right: 100-year-olds. Height: how many people at
+              that age. Years stack toward 2100 at the back, so the same
+              people drift right as they grow older. The rust line follows
+              everyone born in 1964, Germany&rsquo;s biggest birth year.
             </p>
           </header>
 

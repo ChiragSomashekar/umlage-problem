@@ -197,9 +197,6 @@ export default function Promo() {
             <div style={{ marginTop: 14, fontSize: 15, color: COLORS.muted }}>
               Germany&rsquo;s pension math, 1950&ndash;2100
             </div>
-            <div style={{ marginTop: 40, fontSize: 13, fontWeight: 600, letterSpacing: "0.1em", color: COLORS.accent }}>
-              SCRUB ALL 150 YEARS YOURSELF → LINK IN COMMENTS
-            </div>
             <div style={{ marginTop: 40, fontSize: 12, color: COLORS.muted }}>
               Data: UN World Population Prospects 2024
             </div>

@@ -18,7 +18,7 @@ const STAGE_W = 800;
 const STAGE_H = 720;
 
 const CHART_W = 800;
-const CHART_H = 540;
+const CHART_H = 500; // header + captions + chart + credit must sum under the 720 stage
 const M = { top: 36, right: 44, bottom: 40, left: 64 };
 const INNER_W = CHART_W - M.left - M.right;
 const INNER_H = CHART_H - M.top - M.bottom;
@@ -31,10 +31,10 @@ const BIG_BASE = INNER_H * 0.55;
 
 const CAPTIONS = [
   "This is Germany in 1950.",
-  "Every bump is a generation. Every dip, births that never happened.",
+  "Left: newborns. Right: 100-year-olds. Height: how many of them.",
   "Now add one line for every second year since.",
-  "One thread: the cohort born in 1964. The Babyboom.",
-  "Watch it live its whole life.",
+  "The rust line: everyone born in 1964, Germany's biggest birth year.",
+  "Born 1964: 1.3 million of them. Watch how many remain.",
   "150 years of Germany. One drawing.",
 ];
 
@@ -45,7 +45,7 @@ export default function Reel() {
   const [dotAge, setDotAge] = useState(null);
   const intervals = useRef([]);
 
-  const { ridges, thread, xScale, amp, ampBig } = useMemo(() => {
+  const { ridges, thread, xScale, amp, ampBig, cohort } = useMemo(() => {
     const years = d3.range(1950, 2101, YEAR_STEP);
     const maxPop = d3.max(Object.values(pyramid), (yd) => d3.max(yd, ([m, f]) => m + f));
     const x = d3.scaleLinear().domain([0, 100]).range([0, INNER_W]);
@@ -63,8 +63,20 @@ export default function Reel() {
         return age >= 0 && age <= 100 ? points[age] : null;
       })
       .filter(Boolean);
-    return { ridges, thread, xScale: x, amp: a, ampBig: aBig };
+    // the 1964 cohort's true size at every single age (all years exist in
+    // the data, not just the drawn ones) — the dot's counter reads this
+    const cohort = d3.range(101).map((age) => {
+      const [m, f] = pyramid[1964 + age][age];
+      return m + f;
+    });
+    return { ridges, thread, xScale: x, amp: a, ampBig: aBig, cohort };
   }, []);
+
+  const maxCohort = Math.max(...cohort);
+  const fmtAlive = (pop) =>
+    pop >= 1000
+      ? `${(pop / 1000).toFixed(2)} million`
+      : `${(Math.round(pop) * 1000).toLocaleString("en-US")}`;
 
   const lineAt = (points, ampFn, base) =>
     d3
@@ -98,6 +110,42 @@ export default function Reel() {
 
   const dotXs = thread.map((d) => xScale(d.age));
   const dotYs = thread.map((d) => d.yBase - amp(d.pop));
+  // dot area tracks survivors: fattest at the immigration-reinforced peak,
+  // a fading point by 100
+  const dotRs = thread.map((d) => 4.2 * Math.sqrt(d.pop / maxCohort));
+  // the counter floats with the dot but never leaves the frame
+  const cntXs = dotXs.map((v) => Math.min(Math.max(v, 84), INNER_W - 96));
+
+  // The ride pauses at the ages that matter: motion for time, stillness
+  // for facts. Milestones (thread indices): birth, the immigration peak,
+  // today, the collapse, the end. Times are fractions of RIDE_S seconds.
+  const RIDE_S = 8;
+  const rideKf = (arr) => {
+    const vals = [];
+    const times = [];
+    const push = (v, t) => {
+      vals.push(v);
+      times.push(t);
+    };
+    push(arr[0], 0);
+    push(arr[0], 0.1); // hold age 0
+    const segs = [
+      [0, 16, 0.1, 0.25, 0.35], // travel to 32, hold to 0.35
+      [16, 31, 0.35, 0.5, 0.6], // travel to 62, hold
+      [31, 45, 0.6, 0.72, 0.8], // travel to 90, hold
+      [45, 49, 0.8, 0.88, 1.0], // travel to 98 — the last PURE cohort age
+      // (the 100+ bucket pools older cohorts too, so the ride stops at 98)
+    ];
+    for (const [a, b, t0, t1, tHold] of segs) {
+      for (let k = a + 1; k <= b; k++) push(arr[k], t0 + ((t1 - t0) * (k - a)) / (b - a));
+      push(arr[b], tHold);
+    }
+    return { vals, times };
+  };
+  const rideX = rideKf(dotXs);
+  const rideY = rideKf(dotYs);
+  const rideR = rideKf(dotRs);
+  const rideCx = rideKf(cntXs);
 
   // The timeline. Timers only — no Date.now, replayable by reload.
   useEffect(() => {
@@ -125,17 +173,30 @@ export default function Reel() {
     at(14200, () => {
       setCapIdx(4);
       setPhase(3);
-      // the dot ages 0 → 100 over 5s
-      let a = 0;
+      // the counter follows the ride's pauses: fast between milestones,
+      // still during them, so the numbers that matter can be read
+      const ageAt = (t) => {
+        if (t < 0.1) return 0;
+        if (t < 0.25) return (32 * (t - 0.1)) / 0.15;
+        if (t < 0.35) return 32;
+        if (t < 0.5) return 32 + (30 * (t - 0.35)) / 0.15;
+        if (t < 0.6) return 62;
+        if (t < 0.72) return 62 + (28 * (t - 0.6)) / 0.12;
+        if (t < 0.8) return 90;
+        if (t < 0.88) return 90 + (8 * (t - 0.8)) / 0.08;
+        return 98;
+      };
+      let n = 0;
       setDotAge(0);
       const iv = setInterval(() => {
-        a++;
-        setDotAge(a);
-        if (a >= 100) clearInterval(iv);
-      }, 50);
+        n++;
+        const t = (n * 40) / 8000;
+        setDotAge(Math.round(ageAt(Math.min(t, 1))));
+        if (t >= 1) clearInterval(iv);
+      }, 40);
       intervals.current.push(iv);
     });
-    at(19800, () => {
+    at(23000, () => {
       setCapIdx(5);
       setPhase(4);
       setDotAge(null);
@@ -270,7 +331,7 @@ export default function Reel() {
                     transition={{ duration: 0.4 }}
                   >
                     <text
-                      x={xScale(11)}
+                      x={xScale(15)}
                       y={BIG_BASE - ampBig(1360) - 12}
                       textAnchor="middle"
                       fontSize={10}
@@ -278,7 +339,7 @@ export default function Reel() {
                       fill={COLORS.ink}
                       style={{ fontFamily: "'Fraunces', Georgia, serif" }}
                     >
-                      a generation
+                      many babies born in the late 1930s
                     </text>
                     <text
                       x={xScale(32)}
@@ -289,27 +350,27 @@ export default function Reel() {
                       fill={COLORS.muted}
                       style={{ fontFamily: "'Fraunces', Georgia, serif" }}
                     >
-                      missing births, 1917
+                      few babies born in 1917 (war)
                     </text>
                   </motion.g>
                 )}
               </AnimatePresence>
 
-              {/* year counter — the clock of the stacking, painted above all */}
-              {phase >= 1 && (
-                <text
-                  x={INNER_W}
-                  y={2}
-                  textAnchor="end"
-                  fontSize={42}
-                  fontWeight={560}
-                  fill={COLORS.ink}
-                  opacity={0.32}
-                  style={{ fontFamily: "'Fraunces', Georgia, serif", fontVariantNumeric: "tabular-nums" }}
-                >
-                  {year}
-                </text>
-              )}
+              {/* the year — on screen from frame one, so the lone line is
+                  never an unlabeled squiggle; it becomes the running clock
+                  once the stacking starts */}
+              <text
+                x={INNER_W}
+                y={2}
+                textAnchor="end"
+                fontSize={42}
+                fontWeight={560}
+                fill={COLORS.ink}
+                opacity={0.32}
+                style={{ fontFamily: "'Fraunces', Georgia, serif", fontVariantNumeric: "tabular-nums" }}
+              >
+                {year}
+              </text>
 
               {/* the thread */}
               {phase >= 2 && (
@@ -342,11 +403,14 @@ export default function Reel() {
               {phase === 3 && (
                 <>
                   <motion.circle
-                    r={3.4}
                     fill={COLORS.accent}
-                    initial={{ cx: dotXs[0], cy: dotYs[0] }}
-                    animate={{ cx: dotXs, cy: dotYs }}
-                    transition={{ duration: 5, ease: "linear" }}
+                    initial={{ cx: dotXs[0], cy: dotYs[0], r: dotRs[0] }}
+                    animate={{ cx: rideX.vals, cy: rideY.vals, r: rideR.vals }}
+                    transition={{
+                      cx: { duration: RIDE_S, times: rideX.times, ease: "linear" },
+                      cy: { duration: RIDE_S, times: rideY.times, ease: "linear" },
+                      r: { duration: RIDE_S, times: rideR.times, ease: "linear" },
+                    }}
                   />
                   <motion.text
                     textAnchor="middle"
@@ -357,11 +421,14 @@ export default function Reel() {
                     stroke={COLORS.paper}
                     strokeWidth={3}
                     style={{ fontFamily: "'Fraunces', Georgia, serif", fontVariantNumeric: "tabular-nums" }}
-                    initial={{ x: dotXs[0], y: dotYs[0] - 12 }}
-                    animate={{ x: dotXs, y: dotYs.map((v) => v - 12) }}
-                    transition={{ duration: 5, ease: "linear" }}
+                    initial={{ x: cntXs[0], y: dotYs[0] - 14 }}
+                    animate={{ x: rideCx.vals, y: rideY.vals.map((v) => v - 14) }}
+                    transition={{
+                      x: { duration: RIDE_S, times: rideCx.times, ease: "linear" },
+                      y: { duration: RIDE_S, times: rideY.times, ease: "linear" },
+                    }}
                   >
-                    {dotAge != null ? `age ${dotAge}` : ""}
+                    {dotAge != null ? `age ${dotAge} · ${fmtAlive(cohort[dotAge])}` : ""}
                   </motion.text>
                 </>
               )}
@@ -369,7 +436,7 @@ export default function Reel() {
               {/* rest state: the axis entry and the farewell, like the poster */}
               {phase >= 4 && (
                 <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
-                  <circle cx={dotXs[dotXs.length - 1]} cy={dotYs[dotYs.length - 1]} r={2.8} fill={COLORS.accent} />
+                  <circle cx={dotXs[49]} cy={dotYs[49]} r={2.8} fill={COLORS.accent} />
                   <text
                     x={-8}
                     y={dotYs[0] - 2}
@@ -393,8 +460,8 @@ export default function Reel() {
                     1964
                   </text>
                   <text
-                    x={dotXs[dotXs.length - 1] - 6}
-                    y={dotYs[dotYs.length - 1] - 12}
+                    x={dotXs[49] - 6}
+                    y={dotYs[49] - 12}
                     textAnchor="end"
                     fontSize={8.5}
                     fontWeight={600}
@@ -446,22 +513,18 @@ export default function Reel() {
           </svg>
         </div>
 
-        {/* footer CTA appears on the hold */}
-        <div style={{ minHeight: 42, padding: "0 24px 18px" }}>
+        {/* the credit: a film travels without its context */}
+        <div style={{ minHeight: 34, padding: "0 24px 16px" }}>
           <AnimatePresence>
             {phase >= 4 && (
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-                style={{
-                  fontSize: 10.5,
-                  fontWeight: 600,
-                  letterSpacing: "0.1em",
-                  color: COLORS.accent,
-                }}
+                transition={{ duration: 0.6, delay: 0.8 }}
+                style={{ fontSize: 10.5, color: COLORS.muted }}
               >
-                SCRUB ALL 150 YEARS YOURSELF → LINK IN BIO
+                Data: UN World Population Prospects 2024, medium variant.
+                Years after 2024 are projections.
               </motion.p>
             )}
           </AnimatePresence>
