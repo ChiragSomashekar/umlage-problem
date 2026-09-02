@@ -18,7 +18,14 @@ const maxPop = d3.max(Object.values(pyramid), (yearData) =>
   d3.max(yearData, ([m, f]) => Math.max(m, f))
 );
 
-export const Pyramid = ({ year, width, height, margins = MARGIN, showAnnotations = true }) => {
+export const Pyramid = ({
+  year,
+  width,
+  height,
+  margins = MARGIN,
+  showAnnotations = true,
+  yearOpacity = null, // film mode: the watermark is the only clock, so darker
+}) => {
   if (width === 0 || height === 0) return null;
 
   const data = pyramid[year]; // 101 entries of [male, female], in thousands
@@ -27,6 +34,12 @@ export const Pyramid = ({ year, width, height, margins = MARGIN, showAnnotations
   const boundsWidth = width - margins.left - margins.right;
   const boundsHeight = height - margins.top - margins.bottom;
   const center = boundsWidth / 2;
+
+  // A narrow gutter (the film's 540px stage) sets the same annotations
+  // smaller and drops label suffixes; the right edge anchors year + flags
+  // on gutter paper so they never sit on bars.
+  const dense = margins.right < 220;
+  const rightEdge = showAnnotations ? boundsWidth + margins.right - 24 : boundsWidth;
 
   // y: one band per age, age 0 at the BOTTOM (inverted range)
   const yScale = d3
@@ -74,7 +87,7 @@ export const Pyramid = ({ year, width, height, margins = MARGIN, showAnnotations
         {/* Population scale: whisper ticks, mirrored. Every layout gets a
             magnitude scale — and 750k is the largest tick that fits the
             frozen domain (maxPop ≈ 774k; a 1M tick would draw off-chart). */}
-        {[250, 500, 750].map((t) => (
+        {(dense ? [500, 750] : [250, 500, 750]).map((t) => (
           <g key={t}>
             {[center - wScale(t), center + wScale(t)].map((x) => (
               <g key={x}>
@@ -101,13 +114,13 @@ export const Pyramid = ({ year, width, height, margins = MARGIN, showAnnotations
 
         {/* The year: display face, tabular digits so width never jiggles */}
         <text
-          x={showAnnotations ? boundsWidth + 216 : boundsWidth}
+          x={rightEdge}
           y={10}
           textAnchor="end"
           fontSize={48}
           fontWeight={560}
           fill={COLORS.ink}
-          opacity={showAnnotations ? 0.14 : 0.24}
+          opacity={yearOpacity ?? (showAnnotations ? 0.14 : 0.24)}
           style={{ fontFamily: "'Fraunces', Georgia, serif", fontVariantNumeric: "tabular-nums" }}
         >
           {year}
@@ -167,7 +180,10 @@ export const Pyramid = ({ year, width, height, margins = MARGIN, showAnnotations
         <AnimatePresence>
           {(() => {
             // Lay out annotations in the gutter, resolving vertical collisions
-            const gutterX = boundsWidth + 18;
+            const gutterX = boundsWidth + (dense ? 12 : 18);
+            const titleSize = dense ? 12 : 13.5;
+            const lineStep = dense ? 14.5 : 16;
+            const minGap = dense ? 46 : 52;
             const anns = activeAnnotations(year)
               .map((a) => ({
                 ...a,
@@ -178,7 +194,7 @@ export const Pyramid = ({ year, width, height, margins = MARGIN, showAnnotations
               .sort((a, b) => a.y - b.y);
             if (anns.length) anns[0].y = Math.max(anns[0].y, 72); // stay below the status block
             for (let i = 1; i < anns.length; i++) {
-              if (anns[i].y - anns[i - 1].y < 52) anns[i].y = anns[i - 1].y + 52;
+              if (anns[i].y - anns[i - 1].y < minGap) anns[i].y = anns[i - 1].y + minGap;
             }
             return anns.map((a) => {
               const markerColor = a.tone === "accent" ? COLORS.accent : COLORS.muted;
@@ -214,8 +230,8 @@ export const Pyramid = ({ year, width, height, margins = MARGIN, showAnnotations
                     <text
                       key={i}
                       x={gutterX}
-                      y={-1 + i * 16}
-                      fontSize={13.5}
+                      y={-1 + i * lineStep}
+                      fontSize={titleSize}
                       fontStyle="italic"
                       fill={COLORS.ink}
                       style={{ fontFamily: "'Fraunces', Georgia, serif" }}
@@ -225,13 +241,17 @@ export const Pyramid = ({ year, width, height, margins = MARGIN, showAnnotations
                   ))}
                   <text
                     x={gutterX}
-                    y={-1 + a.title(a.age).length * 16}
-                    fontSize={9.5}
+                    y={-1 + a.title(a.age).length * lineStep}
+                    fontSize={dense ? 8.5 : 9.5}
                     fontWeight={600}
                     letterSpacing="0.12em"
                     fill={COLORS.muted}
                   >
-                    {typeof a.detail === "function" ? a.detail(a.age) : a.detail}
+                    {(() => {
+                      const d = typeof a.detail === "function" ? a.detail(a.age) : a.detail;
+                      // the narrow gutter keeps only the cohort years
+                      return dense ? d.split(" · ")[0] : d;
+                    })()}
                   </text>
                 </motion.g>
               );
@@ -248,7 +268,7 @@ export const Pyramid = ({ year, width, height, margins = MARGIN, showAnnotations
           {year >= 2025 && (
             <motion.text
               key="projection"
-              x={showAnnotations ? boundsWidth + 216 : boundsWidth}
+              x={rightEdge}
               y={30}
               textAnchor="end"
               fontSize={10}
@@ -265,7 +285,7 @@ export const Pyramid = ({ year, width, height, margins = MARGIN, showAnnotations
           {year >= 2026 && (
             <motion.text
               key="fade-legend"
-              x={showAnnotations ? boundsWidth + 216 : boundsWidth}
+              x={rightEdge}
               y={44}
               textAnchor="end"
               fontSize={9.5}

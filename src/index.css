@@ -122,6 +122,18 @@ h2 {
   margin: 8px 0 0;
 }
 
+/* Ridge page only: subtitle becomes an italic standfirst so it stops
+   reading as the dek's first line — broadsheet, not website */
+.ridge .subtitle {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+.ridge .stage-head {
+  margin-bottom: 16px;
+}
+
 .source {
   margin-top: 14px;
   font-size: 0.72rem;

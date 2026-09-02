@@ -9,7 +9,7 @@ export const COLORS = {
 
   male: "#4a6a5a",      // quiet evergreen — context, not protagonist
   female: "#c08552",    // quiet ochre-clay — sibling weight to male
-  femaleLabel: "#9c6636", // text variant of female — the fill fails contrast as type
+  femaleLabel: "#8f5c2c", // text variant of female — sibling weight to the green as type (5.1:1)
   accent: "#b5432e",    // rust — reserved for the story (boomers, callouts)
 };
 
