@@ -221,3 +221,37 @@ input[type="range"]:focus-visible {
     font-size: 0.95rem;
   }
 }
+
+/* ?steps controls: typographic buttons, dots for progress */
+.step-btn {
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--ink);
+  background: none;
+  border: none;
+  padding: 8px 0;
+  cursor: pointer;
+  text-decoration: underline transparent;
+  text-underline-offset: 5px;
+  transition: text-decoration-color 0.18s;
+}
+.step-btn:hover { text-decoration-color: var(--ink); }
+.step-btn:focus-visible { outline: 1.5px solid var(--accent); outline-offset: 4px; border-radius: 2px; }
+.step-btn:disabled { color: var(--muted); opacity: 0.45; cursor: default; text-decoration: none; }
+
+.step-dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--muted);
+  opacity: 0.35;
+  cursor: pointer;
+  transition: transform 0.18s, opacity 0.18s, background 0.18s;
+}
+.step-dot.done { opacity: 1; background: var(--ink); }
+.step-dot.now { opacity: 1; background: var(--accent); transform: scale(1.4); }
+.step-dot:hover { opacity: 1; }
+.step-dot:focus-visible { outline: 1.5px solid var(--accent); outline-offset: 3px; }

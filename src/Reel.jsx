@@ -653,21 +653,42 @@ export default function Reel({ manual = false }) {
         <div
           style={{
             width: STAGE_W,
-            margin: "0 auto",
+            margin: "14px auto 0",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            fontSize: 12,
-            color: COLORS.muted,
-            letterSpacing: "0.08em",
+            fontSize: 11,
+            letterSpacing: "0.12em",
             textTransform: "uppercase",
           }}
         >
-          <button type="button" onClick={() => applyStep(Math.max(0, step - 1))} disabled={step === 0} style={btnStyle}>
+          <button
+            type="button"
+            className="step-btn"
+            onClick={() => applyStep(Math.max(0, step - 1))}
+            disabled={step === 0}
+            aria-label="Previous scene"
+          >
             &larr; Back
           </button>
-          <span>Step {step + 1} of {STEPS} &middot; arrow keys work too</span>
-          <button type="button" onClick={() => applyStep(Math.min(STEPS - 1, step + 1))} disabled={step === STEPS - 1} style={btnStyle}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }} aria-label={`Scene ${step + 1} of ${STEPS}`}>
+            {d3.range(STEPS).map((i) => (
+              <button
+                key={i}
+                type="button"
+                className={`step-dot${i < step ? " done" : i === step ? " now" : ""}`}
+                onClick={() => applyStep(i)}
+                aria-label={`Go to scene ${i + 1}`}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            className="step-btn"
+            onClick={() => applyStep(Math.min(STEPS - 1, step + 1))}
+            disabled={step === STEPS - 1}
+            aria-label="Next scene"
+          >
             Next &rarr;
           </button>
         </div>
@@ -677,14 +698,3 @@ export default function Reel({ manual = false }) {
   );
 }
 
-const btnStyle = {
-  font: "inherit",
-  letterSpacing: "inherit",
-  textTransform: "inherit",
-  color: COLORS.ink,
-  background: "transparent",
-  border: `1px solid ${COLORS.muted}66`,
-  borderRadius: 999,
-  padding: "8px 16px",
-  cursor: "pointer",
-};
