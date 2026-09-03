@@ -28,7 +28,7 @@ const AMP_BIG = 115; // height of the 1950 line in the intro phase
 const BIG_BASE = INNER_H * 0.55;
 
 const CAPTIONS = [
-  "This is Germany in 1950.",
+  "This is Germany in 1950: its age distribution, as one line.",
   "Left: newborns. Right: 100-year-olds. Height: how many of them.",
   "Now add one line for every second year since.",
   "The rust line: everyone born in 1964, Germany's biggest birth year.",
