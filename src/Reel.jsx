@@ -42,6 +42,7 @@ export default function Reel({ manual = false }) {
   const [phase, setPhase] = useState(0); // 0 intro, 1 stack, 2 thread, 3 dot, 4 hold
   const [year, setYear] = useState(1950);
   const [dotAge, setDotAge] = useState(null);
+  const [hoverAge, setHoverAge] = useState(null); // ?steps only: reading one age off the 1950 line
   const intervals = useRef([]);
 
   const { ridges, thread, xScale, amp, ampBig, cohort } = useMemo(() => {
@@ -75,6 +76,15 @@ export default function Reel({ manual = false }) {
     pop >= 1000
       ? `${(pop / 1000).toFixed(2)} million`
       : `${(Math.round(pop) * 1000).toLocaleString("en-US")}`;
+
+  // hover on the teaching line: the exact count and share for one age in 1950
+  const total1950 = d3.sum(pyramid[1950], ([m, f]) => m + f);
+  const fmtPeople = (pop) => `${(Math.round(pop) * 1000).toLocaleString("en-US")}`;
+  const onHoverMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const age = Math.round(xScale.invert(e.clientX - rect.left));
+    setHoverAge(Math.max(0, Math.min(100, age)));
+  };
 
   const lineAt = (points, ampFn, base) =>
     d3
@@ -398,6 +408,74 @@ export default function Reel({ manual = false }) {
                   </motion.g>
                 )}
               </AnimatePresence>
+
+              {/* ?steps: hover the first line to read one age */}
+              {manual && phase === 0 && (
+                <g>
+                  <rect
+                    x={0}
+                    y={0}
+                    width={INNER_W}
+                    height={INNER_H}
+                    fill="transparent"
+                    style={{ cursor: "crosshair" }}
+                    onMouseMove={onHoverMove}
+                    onMouseLeave={() => setHoverAge(null)}
+                  />
+                  {hoverAge === null ? (
+                    <text
+                      x={INNER_W}
+                      y={INNER_H - 6}
+                      textAnchor="end"
+                      fontSize={9.5}
+                      letterSpacing="0.1em"
+                      fill={COLORS.muted}
+                    >
+                      HOVER THE LINE TO READ ONE AGE
+                    </text>
+                  ) : (
+                    (() => {
+                      const pt = ridges[0].points[hoverAge];
+                      const px = xScale(hoverAge);
+                      const py = BIG_BASE - ampBig(pt.pop);
+                      const share = ((pt.pop / total1950) * 100).toFixed(1);
+                      const flip = px > INNER_W - 220;
+                      return (
+                        <g style={{ pointerEvents: "none" }}>
+                          <line x1={px} x2={px} y1={py} y2={BIG_BASE + 6} stroke={COLORS.muted} strokeOpacity={0.5} strokeDasharray="2 3" />
+                          <circle cx={px} cy={py} r={3.5} fill={COLORS.accent} />
+                          <text
+                            x={flip ? px - 10 : px + 10}
+                            y={py - 8}
+                            textAnchor={flip ? "end" : "start"}
+                            fontSize={12}
+                            fontStyle="italic"
+                            fill={COLORS.ink}
+                            paintOrder="stroke"
+                            stroke={COLORS.paper}
+                            strokeWidth={4}
+                            style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+                          >
+                            In 1950, {fmtPeople(pt.pop)} people were {hoverAge} years old
+                          </text>
+                          <text
+                            x={flip ? px - 10 : px + 10}
+                            y={py + 8}
+                            textAnchor={flip ? "end" : "start"}
+                            fontSize={10}
+                            fill={COLORS.muted}
+                            paintOrder="stroke"
+                            stroke={COLORS.paper}
+                            strokeWidth={4}
+                          >
+                            {share}% of everyone in Germany
+                          </text>
+                        </g>
+                      );
+                    })()
+                  )}
+                </g>
+              )}
 
               {/* year, shown from the start so the intro line is labeled. counts up during the stack phase */}
               <text
