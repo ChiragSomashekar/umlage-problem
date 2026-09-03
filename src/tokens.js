@@ -1,16 +1,15 @@
-// Design tokens — the piece's laws, not vibes.
-// Tweak here; everything obeys. (Hot reload = live taste loop.)
+// design tokens shared by every view. change colors here, not in the components.
 
 export const COLORS = {
-  paper: "#f7f3ec",     // warm paper ground
-  ink: "#21201c",       // near-black text
-  muted: "#6f675c",     // secondary text, axis labels — 5.0:1 on paper (AA at small sizes)
-  grid: "#8b8378",      // gridlines (used at low opacity)
+  paper: "#f7f3ec",     // background
+  ink: "#21201c",       // text
+  muted: "#6f675c",     // secondary text, axis labels. 5.0:1 on paper, AA at small sizes
+  grid: "#8b8378",      // gridlines, used at low opacity
 
-  male: "#4a6a5a",      // quiet evergreen — context, not protagonist
-  female: "#c08552",    // quiet ochre-clay — sibling weight to male
-  femaleLabel: "#8f5c2c", // text variant of female — sibling weight to the green as type (5.1:1)
-  accent: "#b5432e",    // rust — reserved for the story (boomers, callouts)
+  male: "#4a6a5a",      // green
+  female: "#c08552",    // ochre
+  femaleLabel: "#8f5c2c", // darker female for text, 5.1:1 on paper (the fill is too light as type)
+  accent: "#b5432e",    // rust, only for the boomer annotation and callouts
 };
 
 export const TYPE = {

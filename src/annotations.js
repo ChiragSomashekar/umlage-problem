@@ -1,14 +1,12 @@
-// Editorial annotations, anchored to birth cohorts (age = year - birthYear,
-// so each label rides up with its generation and retires with it).
+// annotations anchored to birth cohorts. age = year - birthYear, so each
+// label moves up the pyramid with its generation and drops off after 100.
 //
-// Language rule: factual, demographic register — "birth deficit"
-// (Geburtenausfall) is the precise term; no poeticizing of war history.
-// Tone rule: wars are quiet historical footnotes (muted); the Babyboom is
-// the piece's protagonist and alone carries the accent.
+// wording: "birth deficit" (Geburtenausfall) is the demographic term, keep it.
+// wars use the muted tone, only the babyboom gets the accent color.
 
-// Cohort windows are fitted to the drawn bars, not to textbook dates:
-// in the UN-smoothed series the WWI notch is 1916–1919 and the WWII trough
-// is 1945–1948 (deepest 1946 — the 1944 cohort is still strong).
+// cohort windows match the drawn bars, not textbook dates: in the UN-smoothed
+// series the WWI notch is 1916–1919 and the WWII trough is 1945–1948
+// (deepest in 1946, the 1944 cohort is still large).
 export const ANNOTATIONS = [
   {
     id: "wwi",
@@ -29,7 +27,7 @@ export const ANNOTATIONS = [
     birthYear: 1962,
     tone: "accent",
     title: () => ["The Babyboom generation"],
-    // anchor age 74 = year 2036, when the youngest boomers (b. 1969) are 67
+    // age 74 = year 2036, when the youngest boomers (born 1969) are 67
     detail: (age) =>
       age >= 74
         ? "BORN 1955–1969 · RETIRED"
@@ -41,19 +39,15 @@ export const ANNOTATIONS = [
     id: "pillenknick",
     birthYear: 1972,
     tone: "quiet",
-    // English title; the German nickname lives in the detail line, quoted
-    // because it is the vernacular name for the notch, not a causal claim
+    // german nickname goes in the detail line, in quotes: it's a name for the notch, not an explanation
     title: () => ["Births fall by a third"],
     detail: "BORN 1968–1975 · ‘PILLENKNICK’",
   },
 ];
 
-// Considered and rejected: a "birth decline of the early 2020s" annotation.
-// The dip is real (age-0: 797k in 2022 → 716k by 2025) but mild, ongoing,
-// and causally contested — it raises questions the piece can't answer and
-// serves no part of the pension story. Candidate for a hover tooltip detail
-// instead. COVID mortality: checked in the data, invisible in the shape,
-// likewise omitted.
+// no annotation for the early-2020s birth dip. it's real (age 0: 797k in 2022,
+// 716k by 2025) but small, still ongoing, and the causes are contested.
+// covid mortality also checked: not visible in the shape, so left out too.
 
 export const activeAnnotations = (year) =>
   ANNOTATIONS.map((a) => ({ ...a, age: year - a.birthYear })).filter(

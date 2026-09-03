@@ -4,21 +4,19 @@ import { MotionConfig, motion, AnimatePresence } from "motion/react";
 import pyramid from "./data/pyramid.json";
 import { COLORS } from "./tokens";
 
-// ?reel — the ridge as a film (Instagram 9:16). The poster at ?ridge is
-// untouched; this stage teaches the chart while it builds:
-//   1. one line alone (learn to read it)
-//   2. the line takes its place, 75 more stack, the year counter runs
-//   3. the rust thread draws
-//   4. a dot LIVES the thread: born 1964 → age 100, counter aging with it
-//   5. hold the finished poster
-// Same stage as the pyramid film (?promo): the series shares one frame.
-// Record at 2x → 1600×1440.
+// ?reel: the ridge chart as an animated film for instagram. phases:
+//   0. the 1950 line alone, drawn large
+//   1. it shrinks into place, the other 75 stack up, year counter runs
+//   2. the rust thread draws
+//   3. a dot moves along the thread from age 0 to 98, with an age/count label
+//   4. hold the finished chart
+// same 800x720 stage as ?promo. record at 2x for 1600x1440.
 
 const STAGE_W = 800;
 const STAGE_H = 720;
 
 const CHART_W = 800;
-const CHART_H = 500; // header + captions + chart + credit must sum under the 720 stage
+const CHART_H = 500; // header + captions + chart + credit have to fit in the 720 stage
 const M = { top: 36, right: 44, bottom: 40, left: 64 };
 const INNER_W = CHART_W - M.left - M.right;
 const INNER_H = CHART_H - M.top - M.bottom;
@@ -26,7 +24,7 @@ const INNER_H = CHART_H - M.top - M.bottom;
 const YEAR_STEP = 2;
 const AMP = 44;
 const STEP = (INNER_H - AMP) / 75;
-const AMP_BIG = 115; // the lone teaching line, drawn large
+const AMP_BIG = 115; // height of the 1950 line in the intro phase
 const BIG_BASE = INNER_H * 0.55;
 
 const CAPTIONS = [
@@ -38,8 +36,9 @@ const CAPTIONS = [
   "150 years of Germany. One drawing.",
 ];
 
-export default function Reel() {
+export default function Reel({ manual = false }) {
   const [capIdx, setCapIdx] = useState(0);
+  const [step, setStep] = useState(0);
   const [phase, setPhase] = useState(0); // 0 intro, 1 stack, 2 thread, 3 dot, 4 hold
   const [year, setYear] = useState(1950);
   const [dotAge, setDotAge] = useState(null);
@@ -63,8 +62,7 @@ export default function Reel() {
         return age >= 0 && age <= 100 ? points[age] : null;
       })
       .filter(Boolean);
-    // the 1964 cohort's true size at every single age (all years exist in
-    // the data, not just the drawn ones) — the dot's counter reads this
+    // 1964 cohort size at every age, using all years (not just the drawn ones), for the dot's counter
     const cohort = d3.range(101).map((age) => {
       const [m, f] = pyramid[1964 + age][age];
       return m + f;
@@ -85,8 +83,7 @@ export default function Reel() {
       .y((d) => base - ampFn(d.pop))
       .curve(d3.curveCatmullRom.alpha(0.5))(points);
 
-  // opaque paper fills under each line: nearer years occlude the ones
-  // behind — the painter's trick that keeps the poster calm
+  // opaque paper fill under each line so nearer years cover the ones behind
   const areaAt = (points, ampFn, base) =>
     d3
       .area()
@@ -110,15 +107,13 @@ export default function Reel() {
 
   const dotXs = thread.map((d) => xScale(d.age));
   const dotYs = thread.map((d) => d.yBase - amp(d.pop));
-  // dot area tracks survivors: fattest at the immigration-reinforced peak,
-  // a fading point by 100
+  // radius scales with sqrt(pop), so the dot's area tracks how many are still alive
   const dotRs = thread.map((d) => 4.2 * Math.sqrt(d.pop / maxCohort));
-  // the counter floats with the dot but never leaves the frame
+  // clamp the counter x so the label stays inside the frame
   const cntXs = dotXs.map((v) => Math.min(Math.max(v, 84), INNER_W - 96));
 
-  // The ride pauses at the ages that matter: motion for time, stillness
-  // for facts. Milestones (thread indices): birth, the immigration peak,
-  // today, the collapse, the end. Times are fractions of RIDE_S seconds.
+  // keyframes for the dot ride. it pauses at a few ages so the counter can be
+  // read. indices are into the thread array, times are fractions of RIDE_S.
   const RIDE_S = 8;
   const rideKf = (arr) => {
     const vals = [];
@@ -133,8 +128,8 @@ export default function Reel() {
       [0, 16, 0.1, 0.25, 0.35], // travel to 32, hold to 0.35
       [16, 31, 0.35, 0.5, 0.6], // travel to 62, hold
       [31, 45, 0.6, 0.72, 0.8], // travel to 90, hold
-      [45, 49, 0.8, 0.88, 1.0], // travel to 98 — the last PURE cohort age
-      // (the 100+ bucket pools older cohorts too, so the ride stops at 98)
+      [45, 49, 0.8, 0.88, 1.0], // travel to 98, the last age that is only this cohort
+      // (the last bucket is 100+ and includes older cohorts, so stop at 98)
     ];
     for (const [a, b, t0, t1, tHold] of segs) {
       for (let k = a + 1; k <= b; k++) push(arr[k], t0 + ((t1 - t0) * (k - a)) / (b - a));
@@ -147,8 +142,48 @@ export default function Reel() {
   const rideR = rideKf(dotRs);
   const rideCx = rideKf(cntXs);
 
-  // The timeline. Timers only — no Date.now, replayable by reload.
+  const clearCounters = () => {
+    intervals.current.forEach(clearInterval);
+    intervals.current = [];
+  };
+  // year counter runs with the stacking (75 ridges x 80ms)
+  const startYearCounter = () => {
+    let i = 0;
+    setYear(1950);
+    const iv = setInterval(() => {
+      i++;
+      setYear(1950 + i * 2);
+      if (i >= 75) clearInterval(iv);
+    }, 80);
+    intervals.current.push(iv);
+  };
+  // age counter mirrors the ride keyframes above: moves between holds, stays put during them
+  const startDotRide = () => {
+    const ageAt = (t) => {
+      if (t < 0.1) return 0;
+      if (t < 0.25) return (32 * (t - 0.1)) / 0.15;
+      if (t < 0.35) return 32;
+      if (t < 0.5) return 32 + (30 * (t - 0.35)) / 0.15;
+      if (t < 0.6) return 62;
+      if (t < 0.72) return 62 + (28 * (t - 0.6)) / 0.12;
+      if (t < 0.8) return 90;
+      if (t < 0.88) return 90 + (8 * (t - 0.8)) / 0.08;
+      return 98;
+    };
+    let n = 0;
+    setDotAge(0);
+    const iv = setInterval(() => {
+      n++;
+      const t = (n * 40) / 8000;
+      setDotAge(Math.round(ageAt(Math.min(t, 1))));
+      if (t >= 1) clearInterval(iv);
+    }, 40);
+    intervals.current.push(iv);
+  };
+
+  // timeline. setTimeout only, no Date.now, so a reload replays it identically
   useEffect(() => {
+    if (manual) return undefined;
     let cancelled = false;
     const T = [];
     const at = (ms, fn) => T.push(setTimeout(() => !cancelled && fn(), ms));
@@ -157,14 +192,7 @@ export default function Reel() {
     at(5400, () => {
       setCapIdx(2);
       setPhase(1);
-      // year counter runs with the stacking (75 ridges × 80ms)
-      let i = 0;
-      const iv = setInterval(() => {
-        i++;
-        setYear(1950 + i * 2);
-        if (i >= 75) clearInterval(iv);
-      }, 80);
-      intervals.current.push(iv);
+      startYearCounter();
     });
     at(12000, () => {
       setCapIdx(3);
@@ -173,28 +201,7 @@ export default function Reel() {
     at(14200, () => {
       setCapIdx(4);
       setPhase(3);
-      // the counter follows the ride's pauses: fast between milestones,
-      // still during them, so the numbers that matter can be read
-      const ageAt = (t) => {
-        if (t < 0.1) return 0;
-        if (t < 0.25) return (32 * (t - 0.1)) / 0.15;
-        if (t < 0.35) return 32;
-        if (t < 0.5) return 32 + (30 * (t - 0.35)) / 0.15;
-        if (t < 0.6) return 62;
-        if (t < 0.72) return 62 + (28 * (t - 0.6)) / 0.12;
-        if (t < 0.8) return 90;
-        if (t < 0.88) return 90 + (8 * (t - 0.8)) / 0.08;
-        return 98;
-      };
-      let n = 0;
-      setDotAge(0);
-      const iv = setInterval(() => {
-        n++;
-        const t = (n * 40) / 8000;
-        setDotAge(Math.round(ageAt(Math.min(t, 1))));
-        if (t >= 1) clearInterval(iv);
-      }, 40);
-      intervals.current.push(iv);
+      startDotRide();
     });
     at(23000, () => {
       setCapIdx(5);
@@ -209,8 +216,47 @@ export default function Reel() {
     };
   }, []);
 
+  // manual mode (?steps): same scenes, advanced by keyboard or buttons
+  const STEPS = CAPTIONS.length;
+  const applyStep = (s) => {
+    clearCounters();
+    setStep(s);
+    setCapIdx(s);
+    if (s <= 1) {
+      setPhase(0);
+      setYear(1950);
+      setDotAge(null);
+    } else if (s === 2) {
+      setPhase(1);
+      startYearCounter();
+      setDotAge(null);
+    } else if (s === 3) {
+      setPhase(2);
+      setYear(2100);
+      setDotAge(null);
+    } else if (s === 4) {
+      setPhase(3);
+      setYear(2100);
+      startDotRide();
+    } else {
+      setPhase(4);
+      setYear(2100);
+      setDotAge(null);
+    }
+  };
+  useEffect(() => {
+    if (!manual) return undefined;
+    const onKey = (e) => {
+      if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); applyStep(Math.min(STEPS - 1, step + 1)); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); applyStep(Math.max(0, step - 1)); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [manual, step]);
+
   return (
     <MotionConfig reducedMotion="user">
+      <>
       <div
         style={{
           width: STAGE_W,
@@ -223,7 +269,7 @@ export default function Reel() {
           flexDirection: "column",
         }}
       >
-        {/* header — same optical cut as the pyramid film */}
+        {/* header, same styling as the promo film */}
         <div style={{ padding: "22px 24px 0" }}>
           <div
             style={{
@@ -263,13 +309,11 @@ export default function Reel() {
           </AnimatePresence>
         </div>
 
-        {/* the drawing */}
         <div style={{ flex: 1 }}>
           <svg width={CHART_W} height={CHART_H} aria-hidden="true">
             <g transform={`translate(${M.left}, ${M.top})`}>
-              {/* the other 75 years: rendered back-to-front so nearer years
-                  occlude the ones behind (paper fill under each line), while
-                  the DRAW delay still runs front-to-back with the counter */}
+              {/* other 75 years. rendered back to front so nearer years cover the ones
+                  behind, but the draw delay runs front to back with the year counter */}
               {phase >= 1 &&
                 [...ridges.slice(1)].reverse().map((r) => {
                   const projected = r.year >= 2025;
@@ -297,8 +341,7 @@ export default function Reel() {
                   );
                 })}
 
-              {/* the 1950 line: drawn large alone, then it takes its place at
-                  the very front — its paper fill covers everything behind */}
+              {/* the 1950 line: drawn large first, then morphs to its place at the front */}
               <motion.path
                 fill={COLORS.paper}
                 initial={{ d: bigAreaD, fillOpacity: 0 }}
@@ -321,7 +364,7 @@ export default function Reel() {
                 }}
               />
 
-              {/* teaching marks on the lone line */}
+              {/* labels on the intro line */}
               <AnimatePresence>
                 {phase === 0 && capIdx === 1 && (
                   <motion.g
@@ -356,9 +399,7 @@ export default function Reel() {
                 )}
               </AnimatePresence>
 
-              {/* the year — on screen from frame one, so the lone line is
-                  never an unlabeled squiggle; it becomes the running clock
-                  once the stacking starts */}
+              {/* year, shown from the start so the intro line is labeled. counts up during the stack phase */}
               <text
                 x={INNER_W}
                 y={2}
@@ -399,7 +440,7 @@ export default function Reel() {
                 </>
               )}
 
-              {/* the dot that lives a life, its age beside it */}
+              {/* dot riding the thread, with its age and count beside it */}
               {phase === 3 && (
                 <>
                   <motion.circle
@@ -433,7 +474,7 @@ export default function Reel() {
                 </>
               )}
 
-              {/* rest state: the axis entry and the farewell, like the poster */}
+              {/* final state labels, same as the poster */}
               {phase >= 4 && (
                 <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
                   <circle cx={dotXs[49]} cy={dotYs[49]} r={2.8} fill={COLORS.accent} />
@@ -476,7 +517,7 @@ export default function Reel() {
                 </motion.g>
               )}
 
-              {/* minimal furniture: three year marks, three age marks */}
+              {/* three year labels, three age labels */}
               {phase >= 1 &&
                 [1950, 2025, 2100].map((yr) => {
                   const i = (yr - 1950) / YEAR_STEP;
@@ -513,7 +554,7 @@ export default function Reel() {
           </svg>
         </div>
 
-        {/* the credit: a film travels without its context */}
+        {/* data credit, since the film gets shared without the page */}
         <div style={{ minHeight: 34, padding: "0 24px 16px" }}>
           <AnimatePresence>
             {phase >= 4 && (
@@ -530,6 +571,42 @@ export default function Reel() {
           </AnimatePresence>
         </div>
       </div>
+      {manual && (
+        <div
+          style={{
+            width: STAGE_W,
+            margin: "0 auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: 12,
+            color: COLORS.muted,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}
+        >
+          <button type="button" onClick={() => applyStep(Math.max(0, step - 1))} disabled={step === 0} style={btnStyle}>
+            &larr; Back
+          </button>
+          <span>Step {step + 1} of {STEPS} &middot; arrow keys work too</span>
+          <button type="button" onClick={() => applyStep(Math.min(STEPS - 1, step + 1))} disabled={step === STEPS - 1} style={btnStyle}>
+            Next &rarr;
+          </button>
+        </div>
+      )}
+      </>
     </MotionConfig>
   );
 }
+
+const btnStyle = {
+  font: "inherit",
+  letterSpacing: "inherit",
+  textTransform: "inherit",
+  color: COLORS.ink,
+  background: "transparent",
+  border: `1px solid ${COLORS.muted}66`,
+  borderRadius: 999,
+  padding: "8px 16px",
+  cursor: "pointer",
+};

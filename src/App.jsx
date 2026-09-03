@@ -4,16 +4,14 @@ import { Pyramid } from "./components/Pyramid";
 import { useDimensions } from "./hooks/use-dimensions";
 import ratio from "./data/ratio.json";
 
-// Wide screens get the annotation gutter; narrow ones drop it — the era
-// captions carry the story there (M5 design ladder, decided in advance).
+// wide screens get the annotation gutter on the right, narrow ones drop it and rely on the captions
 const WIDE = 700;
 const GUTTER_MARGINS = { top: 40, right: 240, bottom: 32, left: 44 };
 const COMPACT_MARGINS = { top: 40, right: 20, bottom: 28, left: 38 };
 
-// Era captions — same narrative voice as the promo film, driven by the slider.
-// Windows must agree with the readout printed beneath them: the ratio first
-// rounds to "two" in 2025, and the last Babyboom cohort (b. 1969) is retired
-// by 2036 — captions may never contradict the piece's own numbers.
+// captions per year range, same text as the promo film. the year cutoffs have
+// to match the readout below: the ratio first rounds to 2 in 2025 and the last
+// boomers (born 1969) are retired by 2036.
 const captionFor = (year) => {
   if (year < 1958) return "In 1950, nearly seven Germans of working age stood behind every person over 65.";
   if (year < 2025) return "Then the country grew older.";
@@ -30,7 +28,7 @@ export default function App() {
   const isWide = chartW >= WIDE;
   const chartH = isWide
     ? Math.min(560, Math.round(chartW * 0.57))
-    : Math.round(chartW * 1.05); // phones: taller than wide, like the promo
+    : Math.round(chartW * 1.05); // phones: taller than wide
 
   const r = ratio.find((d) => d.year === year);
   const caption = captionFor(year);
@@ -63,8 +61,7 @@ export default function App() {
           <span className="slider-year">2100</span>
         </div>
 
-        {/* Takeaway ABOVE the chart (SWD doctrine) and right under the
-            slider, where the eyes are while scrubbing */}
+        {/* caption sits above the chart, right under the slider where you look while scrubbing */}
         <div className="caption-band">
           <AnimatePresence mode="wait">
             <motion.p

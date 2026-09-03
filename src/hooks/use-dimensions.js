@@ -1,8 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 
-// The course's measuring hook (Module 5): size of a ref'd container,
-// re-measured on window resize. Resize becomes a state change → the
-// whole UI = f(state) machinery handles the rest.
+// measures a ref'd container and re-measures on window resize, so a resize is just a state change
 export const useDimensions = (targetRef) => {
   const getDimensions = () => ({
     width: targetRef.current ? targetRef.current.offsetWidth : 0,

@@ -4,20 +4,18 @@ import { motion, AnimatePresence } from "motion/react";
 import { COLORS } from "./tokens";
 import ratio from "./data/ratio.json";
 
-// "There is no pot" — the pension system as an emptying room.
-// Ten people over 65 on the right; the crowd of working-age people who
-// carry them on the left (count = the true ratio × 10, from ratio.json:
-// 67 in 1950 → 24 in 2026 → 17 in 2060 → 16 in 2100). Contributions
-// stream through a pension pot that does not exist. The stream never
-// thins — the pension is paid regardless — so as the room empties, each
-// coin grows: fewer carriers, more per carrier. Departed workers leave
-// ghost outlines; by 2100 the room is mostly absence.
+// ?flow: "there is no pot" film. ten people over 65 on the right, the
+// working-age people funding them on the left (ratio x 10 from ratio.json:
+// 67 in 1950, 24 in 2026, 17 in 2060, 16 in 2100). coins flow through a
+// dashed pot that is empty. the coin count stays constant and each coin
+// grows over time: fewer payers, more per payer. workers that leave stay
+// as ghost outlines.
 
 const STAGE_W = 800;
 const STAGE_H = 720;
 
-const HERO_BEAT = 1; // one coin, followed by the eye: into the pot, out again
-const WALK_BEAT = 5; // two carriers cross the room and become carried
+const HERO_BEAT = 1; // beat with the single big coin going through the pot
+const WALK_BEAT = 5; // beat where two workers walk over to the retired side
 
 const BEATS = [
   { scene: "flow", year: 1950, hold: 3200, caption: "Where does your pension contribution actually go?" },
@@ -33,24 +31,24 @@ const BEATS = [
   { scene: "end", hold: 5200 },
 ];
 
-// Scene geometry
+// scene geometry
 const SCENE_W = 800;
 const SCENE_H = 452;
 const ROWS = 10;
 const ROW_Y0 = 88;
 const ROW_STEP = 34;
-const POOL_X0 = 226; // rightmost worker column; more columns grow leftward
+const POOL_X0 = 226; // rightmost worker column, extra columns go leftward
 const COL_STEP = 24;
 const ACCOUNT_X = 400;
 const OUTLET_X = 642;
 const FLOOR_Y = 406;
-const MAX_WORKERS = 67; // the 1950 crowd — the film's maximum, so no spurious ghosts
-const N_PARTICLES = 12; // constant: the pension is paid regardless
+const MAX_WORKERS = 67; // the 1950 count, the max, so there are never ghosts for people who were never there
+const N_PARTICLES = 12; // constant, the pension is paid regardless of how many workers
 
 // deterministic jitter so nothing needs Math.random
 const jit = (i, span) => ((i * 53) % span) - span / 2;
 
-// A standing figure: head 23% of height, a hint of shoulder, no pill-roundness
+// body path for a standing figure, slight shoulders
 const BODY_D = "M -3.5 9.5 L -3.5 -3.2 Q -3.5 -5.8 -1.4 -5.8 L 1.4 -5.8 Q 3.5 -5.8 3.5 -3.2 L 3.5 9.5 Z";
 
 const Figure = ({ color }) => (
@@ -67,7 +65,7 @@ const FigureGhost = ({ color }) => (
   </>
 );
 
-// A walker whose ink turns clay as they cross the room
+// walking figure, recolors from worker to retired color near the end of the walk
 const WalkFigure = ({ delay }) => {
   const t = { duration: 1.9, times: [0, 0.75, 1], delay, ease: "easeInOut" };
   return (
@@ -131,8 +129,8 @@ export default function Flow() {
 
   const beat = BEATS[beatIdx];
   const r = ratio.find((d) => d.year === year);
-  const per10 = r ? Math.round(r.ratio * 10) : 67; // carriers per 10 carried
-  const coinR = 2.6 + ((year - 1950) / 150) * 0.8; // fewer carriers, more per carrier
+  const per10 = r ? Math.round(r.ratio * 10) : 67; // workers per 10 retired
+  const coinR = 2.6 + ((year - 1950) / 150) * 0.8; // coins grow over time: fewer payers, more per payer
   const capKey = beat.parts ? beat.parts.pre + beat.parts.num : beat.caption;
 
   return (
@@ -148,7 +146,7 @@ export default function Flow() {
         flexDirection: "column",
       }}
     >
-      {/* header — series voice */}
+      {/* header */}
       <div style={{ padding: "22px 24px 0" }}>
         <div
           style={{
@@ -212,11 +210,11 @@ export default function Flow() {
         )}
       </div>
 
-      {/* the room */}
+      {/* scene */}
       <div style={{ flex: 1, position: "relative" }}>
         {beat.scene === "flow" && (
           <svg width={SCENE_W} height={SCENE_H} aria-hidden="true">
-            {/* the year — the clock of the piece */}
+            {/* year counter */}
             <text
               x={SCENE_W - 30}
               y={46}
@@ -249,7 +247,7 @@ export default function Flow() {
               )}
             </AnimatePresence>
 
-            {/* column labels: names only — the counter line carries the number */}
+            {/* column labels, no numbers here, the counter line above has them */}
             <text x={POOL_X0 + 6} y={68} textAnchor="end" fontSize={10.5} fontWeight={600} letterSpacing="0.1em" fill={COLORS.male}>
               AGED 20&ndash;64
             </text>
@@ -257,10 +255,10 @@ export default function Flow() {
               65 AND OLDER
             </text>
 
-            {/* the floor: emptiness must read as a room, not a broken layout */}
+            {/* floor line, so the empty space still reads as a room in 2100 */}
             <line x1={56} x2={OUTLET_X + 34} y1={FLOOR_Y} y2={FLOOR_Y} stroke={COLORS.muted} strokeOpacity={0.35} />
 
-            {/* the pot that does not exist */}
+            {/* the empty pot */}
             <rect
               x={ACCOUNT_X - 56}
               y={168}
@@ -287,14 +285,13 @@ export default function Flow() {
               there is none
             </text>
 
-            {/* the crowd of carriers: columns fill from the floor up; the
-                departed stay behind as ghost outlines — absence accumulates */}
+            {/* workers. columns fill from the floor up, the ones that left stay as ghost outlines */}
             {d3.range(MAX_WORKERS).map((i) => {
               const col = Math.floor(i / ROWS);
-              const row = 9 - (i % ROWS); // survivors stay grounded at the floor
+              const row = 9 - (i % ROWS); // fill from the floor up, so the remaining ones stay at the bottom
               const x = POOL_X0 - col * COL_STEP + jit(i, 8);
               const y = ROW_Y0 + row * ROW_STEP + jit(i + 7, 6);
-              const s = 1 + ((i * 29) % 9 - 4) / 100; // ±4% scale — people, not units
+              const s = 1 + ((i * 29) % 9 - 4) / 100; // +-4% size jitter so they don't look like identical units
               return (
                 <g key={i} transform={`translate(${x}, ${y}) scale(${s})`}>
                   <motion.g
@@ -315,15 +312,14 @@ export default function Flow() {
               );
             })}
 
-            {/* the ten being carried — a touch wider, a touch shorter */}
+            {/* the ten retired, slightly wider and shorter */}
             {d3.range(ROWS).map((row) => (
               <g key={row} transform={`translate(${OUTLET_X}, ${ROW_Y0 + row * ROW_STEP}) scale(1.05, 0.92)`}>
                 <Figure color={COLORS.female} />
               </g>
             ))}
 
-            {/* contributions in flight: the stream never thins — the coins grow.
-                Dimmed to a murmur while the hero coin makes its point. */}
+            {/* coins in flight. dimmed during the hero beat */}
             <motion.g animate={{ opacity: beatIdx === HERO_BEAT ? 0.25 : 1 }} transition={{ duration: 0.5 }}>
               {d3.range(N_PARTICLES).map((i) => {
                 const oy = ROW_Y0 + (i % ROWS) * ROW_STEP;
@@ -351,7 +347,7 @@ export default function Flow() {
               })}
             </motion.g>
 
-            {/* the hero coin: into the pot, a held breath, out to a pension */}
+            {/* hero coin: into the pot, pause, out to a pensioner */}
             {beatIdx === HERO_BEAT && (
               <motion.circle
                 fill={COLORS.accent}
@@ -366,7 +362,7 @@ export default function Flow() {
               />
             )}
 
-            {/* the gesture: two carriers cross the room and become carried */}
+            {/* two workers walk over to the retired side */}
             {beatIdx === WALK_BEAT &&
               [2, 5].map((row, k) => (
                 <motion.g

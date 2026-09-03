@@ -1,6 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,560;0,9..144,640;1,9..144,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
 
-/* CSS mirror of src/tokens.js — keep the two in sync by hand */
+/* CSS mirror of src/tokens.js , keep the two in sync by hand */
 :root {
   --paper: #f7f3ec;
   --ink: #21201c;
@@ -47,7 +47,7 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
-/* Slider row: the whole interaction — end labels tell the range at a glance */
+/* Slider row: the whole interaction , end labels tell the range at a glance */
 .slider-row {
   display: flex;
   align-items: center;
@@ -123,7 +123,7 @@ h2 {
 }
 
 /* Ridge page only: subtitle becomes an italic standfirst so it stops
-   reading as the dek's first line — broadsheet, not website */
+   reading as the dek's first line , broadsheet, not website */
 .ridge .subtitle {
   font-family: var(--display);
   font-style: italic;

@@ -8,12 +8,10 @@ const SPRING = MOTION.narrative;
 const MALE_COLOR = COLORS.male;
 const FEMALE_COLOR = COLORS.female;
 
-// Right margin is the ANNOTATION GUTTER: labels live there on clean paper,
-// never on top of the data.
+// right margin is the annotation gutter, labels go there instead of on the bars
 const MARGIN = { top: 40, right: 240, bottom: 32, left: 44 };
 
-// Domain computed from the WHOLE dataset, not one year: the x scale must stay
-// identical across years so bars remain comparable when we morph decades later.
+// max over all years, not just the current one, so the x scale stays fixed when scrubbing
 const maxPop = d3.max(Object.values(pyramid), (yearData) =>
   d3.max(yearData, ([m, f]) => Math.max(m, f))
 );
@@ -24,7 +22,7 @@ export const Pyramid = ({
   height,
   margins = MARGIN,
   showAnnotations = true,
-  yearOpacity = null, // film mode: the watermark is the only clock, so darker
+  yearOpacity = null, // promo overrides this: the year is the only clock there, so darker
 }) => {
   if (width === 0 || height === 0) return null;
 
@@ -35,29 +33,27 @@ export const Pyramid = ({
   const boundsHeight = height - margins.top - margins.bottom;
   const center = boundsWidth / 2;
 
-  // A narrow gutter (the film's 540px stage) sets the same annotations
-  // smaller and drops label suffixes; the right edge anchors year + flags
-  // on gutter paper so they never sit on bars.
+  // narrow gutter: smaller annotation text and shorter detail lines. year and
+  // flags anchor to the gutter's right edge so they don't overlap bars.
   const dense = margins.right < 220;
   const rightEdge = showAnnotations ? boundsWidth + margins.right - 24 : boundsWidth;
 
-  // y: one band per age, age 0 at the BOTTOM (inverted range)
+  // one band per age, age 0 at the bottom
   const yScale = d3
     .scaleBand()
     .domain(d3.range(101))
     .range([boundsHeight, 0])
-    .padding(0.06); // near-solid silhouette — the shape reads as one form
+    .padding(0.06); // small padding so the bars read as one silhouette
 
-  // population → half-width in pixels, shared by both sexes (the mirror trick)
+  // population to half-width in px, same scale for both sexes
   const wScale = d3.scaleLinear().domain([0, maxPop]).range([0, center]);
 
-  // decade ticks for the age axis: 0, 10, … 100
   const ageTicks = d3.range(0, 101, 10);
 
   return (
     <svg width={width} height={height} aria-hidden="true">
       <g transform={`translate(${margins.left}, ${margins.top})`}>
-        {/* Age axis: label + faint gridline every 10 years */}
+        {/* age axis, label + faint gridline every 10 years */}
         {ageTicks.map((age) => (
           <g key={age}>
             <text
@@ -84,9 +80,8 @@ export const Pyramid = ({
           Age
         </text>
 
-        {/* Population scale: whisper ticks, mirrored. Every layout gets a
-            magnitude scale — and 750k is the largest tick that fits the
-            frozen domain (maxPop ≈ 774k; a 1M tick would draw off-chart). */}
+        {/* population ticks, mirrored. 750k is the largest tick that fits
+            (maxPop is about 774k, a 1M tick would be off-chart) */}
         {(dense ? [500, 750] : [250, 500, 750]).map((t) => (
           <g key={t}>
             {[center - wScale(t), center + wScale(t)].map((x) => (
@@ -103,8 +98,7 @@ export const Pyramid = ({
           people per year of age
         </text>
 
-        {/* Sex labels: tracked caps, museum-label register. The female fill
-            is too light as type — labels use its darker text variant. */}
+        {/* sex labels. the female fill is too light for text, so use femaleLabel */}
         <text x={center - 14} y={-18} textAnchor="end" fontSize={10.5} fontWeight={600} letterSpacing="0.1em" fill={MALE_COLOR}>
           MEN
         </text>
@@ -112,7 +106,7 @@ export const Pyramid = ({
           WOMEN
         </text>
 
-        {/* The year: display face, tabular digits so width never jiggles */}
+        {/* year, tabular digits so the width doesn't jump */}
         <text
           x={rightEdge}
           y={10}
@@ -126,9 +120,7 @@ export const Pyramid = ({
           {year}
         </text>
 
-        {/* Male half: mirrored group anchored at center — bars grow leftward,
-            but in local coordinates they're plain width-only bars. The zero
-            line never moves; only the data end animates. */}
+        {/* male half: group is flipped with scale(-1, 1), so the bars are plain x=0 rects that grow leftward */}
         <g transform={`translate(${center}, 0) scale(-1, 1)`}>
           {data.map(([m], age) => (
             <motion.rect
@@ -150,9 +142,8 @@ export const Pyramid = ({
           ))}
         </g>
 
-        {/* Female half: anchored at center, growing rightward. Unborn cohorts
-            fade via fillOpacity plus a hairline self-stroke — the light female
-            fill would otherwise vanish into the paper at 0.38. */}
+        {/* female half. cohorts not yet born in 2024 get fillOpacity 0.38 plus a
+            thin stroke, otherwise the light fill disappears into the paper */}
         <g transform={`translate(${center}, 0)`}>
           {data.map(([, f], age) => (
             <motion.rect
@@ -175,11 +166,10 @@ export const Pyramid = ({
         </g>
 
         {showAnnotations && (<>
-        {/* Annotations: each rides its cohort. Dot at the bar's tip, label
-            beside it, paper halo for legibility when floating over bars. */}
+        {/* annotations follow their cohort. dot at the bar tip, leader line to the label in the gutter */}
         <AnimatePresence>
           {(() => {
-            // Lay out annotations in the gutter, resolving vertical collisions
+            // lay out in the gutter, push overlapping labels down
             const gutterX = boundsWidth + (dense ? 12 : 18);
             const titleSize = dense ? 12 : 13.5;
             const lineStep = dense ? 14.5 : 16;
@@ -192,7 +182,7 @@ export const Pyramid = ({
                 y: yScale(a.age) + yScale.bandwidth() / 2,
               }))
               .sort((a, b) => a.y - b.y);
-            if (anns.length) anns[0].y = Math.max(anns[0].y, 72); // stay below the status block
+            if (anns.length) anns[0].y = Math.max(anns[0].y, 72); // stay below the year and projection text
             for (let i = 1; i < anns.length; i++) {
               if (anns[i].y - anns[i - 1].y < minGap) anns[i].y = anns[i - 1].y + minGap;
             }
@@ -206,7 +196,7 @@ export const Pyramid = ({
                   exit={{ opacity: 0 }}
                   transition={SPRING}
                 >
-                  {/* leader: dot at the cohort's TRUE height, elbow to the label */}
+                  {/* leader: dot at the cohort's actual height, elbow to the label (which may be pushed down) */}
                   <motion.circle
                     r={2}
                     fill={markerColor}
@@ -225,7 +215,7 @@ export const Pyramid = ({
                     }}
                     transition={SPRING}
                   />
-                  {/* two-tier label on clean paper — no halo needed */}
+                  {/* title lines, then the detail line */}
                   {a.title(a.age).map((line, i) => (
                     <text
                       key={i}
@@ -261,9 +251,7 @@ export const Pyramid = ({
 
         </>)}
 
-        {/* Projection flag: appears once the data stops being history.
-            Deliberately OUTSIDE the annotation gate — phones and the film
-            must never show projected bars unlabeled. */}
+        {/* projection flag. outside the showAnnotations gate on purpose, phones need it too */}
         <AnimatePresence>
           {year >= 2025 && (
             <motion.text

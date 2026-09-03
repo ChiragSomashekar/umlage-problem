@@ -2,10 +2,9 @@ import * as d3 from "d3";
 import variants from "../data/migration-variants.json";
 import { COLORS } from "../tokens";
 
-// Page 2: one future year, two Germanys.
-// Solid sex-colored bars = population WITHOUT migration (Eurostat NMIGR).
-// Rust segment on top = the difference the baseline adds: migration and
-// its children. The rust IS the story, so it wears the accent.
+// one future year, with and without migration.
+// solid bars = population without migration (eurostat NMIGR variant).
+// rust segment on top = what the baseline adds: migration and its children.
 
 const MARGIN = { top: 40, right: 240, bottom: 32, left: 44 };
 
@@ -38,7 +37,7 @@ export const MigrationPyramid = ({ year = 2060, width, height, margins = MARGIN,
   const Half = ({ sexIdx, mirrored }) => (
     <g transform={`translate(${center}, 0) scale(${mirrored ? -1 : 1}, 1)`}>
       {data.map(([bsl, nm], age) => {
-        const base = wScale(nm[sexIdx]); // still there without migration
+        const base = wScale(nm[sexIdx]); // without migration
         const gap = wScale(bsl[sexIdx]) - base; // added by migration
         return (
           <g key={age}>
@@ -95,7 +94,7 @@ export const MigrationPyramid = ({ year = 2060, width, height, margins = MARGIN,
         <Half sexIdx={0} mirrored />
         <Half sexIdx={1} />
 
-        {/* Year, same register as page 1 */}
+        {/* year, same as Pyramid */}
         <text
           x={showAnnotation ? boundsWidth + 216 : boundsWidth}
           y={10}
@@ -109,7 +108,7 @@ export const MigrationPyramid = ({ year = 2060, width, height, margins = MARGIN,
           {year}
         </text>
 
-        {/* The one annotation, factual register */}
+        {/* the single annotation */}
         {showAnnotation && (
         <g transform={`translate(0, ${yScale(35)})`}>
           <path

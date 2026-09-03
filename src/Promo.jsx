@@ -4,22 +4,16 @@ import { Pyramid } from "./components/Pyramid";
 import { COLORS } from "./tokens";
 import ratio from "./data/ratio.json";
 
-// LinkedIn promo mode (open with ?promo).
-// Stage is 540×675 CSS px → record on a retina screen = 1080×1350 (4:5).
-// The timeline drives itself; captions carry the story (silent autoplay).
+// linkedin promo (?promo). autoplays through BEATS, no audio, captions carry it.
+// stage is 800x720 css px, record on a retina screen for 1600x1440.
 
-// 1:1 square (LinkedIn's other first-class format): trades a sliver of
-// feed height for 25% more chart width — this composition is wide by
-// nature. Retina → 1600×1600.
+// roughly square instead of 4:5: 25% more chart width, and the chart is wide
 const STAGE_W = 800;
-const STAGE_H = 720; // slightly under square so the card fits an un-fullscreened browser
-// The page's own gutter width: at 800 wide the film fits the full-size
-// annotation system, details and all — film and page are now identical.
+const STAGE_H = 720; // a bit under square so the card fits a non-fullscreen browser
+// same margins as the page, so the full annotation gutter fits
 const CHART_MARGINS = { top: 40, right: 240, bottom: 24, left: 40 };
 
-// Captions must agree with the ticking readout below them — no rounded
-// claims the chart itself contradicts. The film now reaches 2100: the urn
-// is the strongest frame, and the card promises 1950–2100.
+// caption numbers have to match the ratio readout printed below them
 const BEATS = [
   {
     scene: "pyr", year: 1950, hold: 3800,
@@ -90,7 +84,7 @@ export default function Promo() {
         flexDirection: "column",
       }}
     >
-      {/* header — same optical cut and tracking as the page h1 */}
+      {/* header, same size and tracking as the page h1 */}
       <div style={{ padding: "22px 24px 0" }}>
         <div
           style={{
@@ -108,8 +102,7 @@ export default function Promo() {
         </div>
       </div>
 
-      {/* caption band + ticking readout, ABOVE the chart: feed viewers read
-          top-down, and LinkedIn's own progress bar covers the bottom edge */}
+      {/* caption + readout above the chart: linkedin's progress bar covers the bottom edge */}
       <div
         style={{
           minHeight: 100,
@@ -155,7 +148,6 @@ export default function Promo() {
         )}
       </div>
 
-      {/* chart area */}
       <div style={{ flex: 1, position: "relative" }}>
         {beat.scene === "pyr" && (
           <Pyramid

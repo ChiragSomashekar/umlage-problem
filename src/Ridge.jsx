@@ -4,14 +4,10 @@ import { MotionConfig, motion } from "motion/react";
 import pyramid from "./data/pyramid.json";
 import { COLORS } from "./tokens";
 
-// 150 years of Germany, one line each.
-//
-// Every ridge is a single calendar year: how many people were alive at
-// each age, from 0 on the left to 100 on the right. The years stack from
-// 1950 at the front to 2100 at the back, so a generation does not sit
-// still — it travels rightward as it ages, and you can watch one wave
-// cross the whole range. The rust thread follows the cohort born in 1964,
-// the largest in German history, from birth to the end of the century.
+// ridgeline: one line per year, 1950 at the front (bottom) to 2100 at the back.
+// x = age 0..100, height = people alive at that age. a cohort moves one age
+// to the right per year, so it shows up as a diagonal across the stack.
+// the rust line follows the 1964 cohort, the largest birth year.
 
 const W = 940;
 const H = 760;
@@ -19,14 +15,13 @@ const M = { top: 84, right: 44, bottom: 60, left: 84 };
 const INNER_W = W - M.left - M.right;
 const INNER_H = H - M.top - M.bottom;
 
-const YEAR_STEP = 2; // 76 ridges: dense enough to read as a surface
-// The data are 1 January stocks, so age 0 in the 1965 snapshot = the cohort
-// born in calendar 1964 — Destatis's record birth year (1.36M births). This
-// diagonal holds both records in our data: largest age-0 stock (1,324k in
-// 1965) and largest single-age stock ever (1,492k at age 32 in 1997, after
-// immigration added to it).
+const YEAR_STEP = 2; // every second year, 76 ridges
+// data are 1 january stocks, so age 0 in 1965 = born in 1964, the record birth
+// year (1.36M). this diagonal has the largest age-0 value (1,324k in 1965) and
+// the largest single-age value in the whole dataset (1,492k at age 32 in 1997,
+// after immigration).
 const BOOM_DIAG = 1965;
-const AMP = 58; // how tall one year's profile may rise
+const AMP = 58; // max height of one ridge in px
 const STEP = (INNER_H - AMP) / ((2100 - 1950) / YEAR_STEP);
 
 export default function Ridge() {
@@ -40,7 +35,7 @@ export default function Ridge() {
     const x = d3.scaleLinear().domain([0, 100]).range([0, INNER_W]);
     const amp = d3.scaleLinear().domain([0, maxPop]).range([0, AMP]);
 
-    // index 0 = 1950 = the front row, at the bottom of the frame
+    // i = 0 is 1950, drawn at the bottom
     const baseline = (i) => INNER_H - i * STEP;
 
     const ridges = years.map((year, i) => ({
@@ -53,7 +48,7 @@ export default function Ridge() {
       })),
     }));
 
-    // one cohort, followed across every year it is alive
+    // one point per ridge where the 1964 cohort is alive
     const thread = ridges
       .map(({ year, points }) => {
         const age = year - BOOM_DIAG;
@@ -71,9 +66,7 @@ export default function Ridge() {
     return d3.scaleLinear().domain([0, maxPop]).range([0, AMP]);
   }, []);
 
-  // Catmull-Rom passes THROUGH every data point — curveBasis only smooths
-  // near them, shaving true peaks and filling true notches. War notches
-  // and boom summits are the story; the line must honor them exactly.
+  // catmull-rom goes through the actual points, curveBasis would smooth the war notches and boom peaks away
   const area = d3
     .area()
     .x((d) => xScale(d.age))
@@ -119,8 +112,7 @@ export default function Ridge() {
             aria-label="Ridgeline of Germany's age structure, 1950 to 2100"
           >
             <g transform={`translate(${M.left}, ${M.top})`}>
-              {/* back to front: later years are drawn first, so the nearer
-                  years overlap them and the range gains depth */}
+              {/* paint back to front so nearer years cover the ones behind */}
               {[...ridges].reverse().map(({ year, i, points }) => {
                 const projected = year >= 2025;
                 const delay = i * 0.016;
@@ -147,9 +139,8 @@ export default function Ridge() {
                 );
               })}
 
-              {/* the cohort thread: one generation, crossing its own century.
-                  A paper halo rides beneath it — crossings over ink ridges
-                  become crisp cuts, and the line survives video compression. */}
+              {/* the 1964 thread. wider paper stroke underneath so it stays readable
+                  where it crosses ink ridges, and survives video compression */}
               <motion.path
                 d={threadLine(thread)}
                 fill="none"
@@ -186,9 +177,8 @@ export default function Ridge() {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3, delay: lastDelay + 0.4 }}
               />
-              {/* the cohort's name lives on the YEAR axis — it is a year,
-                  set in the thread's own rust, at the height where the
-                  thread enters the field. Never fights the terrain. */}
+              {/* "born 1964" goes on the year axis at the height where the thread
+                  starts, so it doesn't sit on top of the ridges */}
               <motion.g
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -232,10 +222,8 @@ export default function Ridge() {
                 THE SAME PEOPLE, NEARING 100
               </motion.text>
 
-              {/* the summit: the thread's apex is the largest single-age
-                  stock of the whole 150 years. The rust dot alone marks it —
-                  no label survives this terrain premium-ly; the number lives
-                  in the caption copy. */}
+              {/* dot on the thread's peak. no label here, it would collide with the
+                  ridges; the number is in the caption */}
               {(() => {
                 const s = thread.find((d) => d.age === 31);
                 return (
@@ -251,8 +239,7 @@ export default function Ridge() {
                 );
               })()}
 
-              {/* the WWI groove, named once on the front ridge — it teaches
-                  the groove grammar; the WWII groove stays silent */}
+              {/* label the WWI notch once on the front ridge, the WWII notch stays unlabeled */}
               <motion.text
                 x={xScale(32)}
                 y={INNER_H - 8}
@@ -268,7 +255,7 @@ export default function Ridge() {
                 THE MISSING BIRTHS OF 1917&ndash;18
               </motion.text>
 
-              {/* the closing bookend above the featureless back ridge */}
+              {/* label above the back (2100) ridge */}
               <motion.text
                 x={6}
                 y={22}
@@ -283,8 +270,7 @@ export default function Ridge() {
                 FEWER THAN HALF THE NEWBORNS OF 1964
               </motion.text>
 
-              {/* year markers down the left edge — only years that ARE a
-                  drawn ridge, so every label names a real line */}
+              {/* year labels every 50 years. those are all even, so each one lands on a drawn ridge */}
               {d3.range(1950, 2101, 50).map((year) => {
                 const i = (year - 1950) / YEAR_STEP;
                 const y = INNER_H - i * STEP;
@@ -307,17 +293,15 @@ export default function Ridge() {
                       {year}
                     </text>
                     <line x1={-8} x2={-2} y1={y} y2={y} stroke={COLORS.muted} strokeOpacity={0.6} />
-                    {/* baseline stub: the label visibly touches its line's
-                        floor, so the eye binds year to ridge, not to
-                        whichever crest passes nearby */}
+                    {/* short stub along the baseline so the label reads as belonging
+                        to this ridge, not to a crest passing nearby */}
                     <line x1={0} x2={18} y1={y} y2={y} stroke={COLORS.muted} strokeOpacity={0.5} />
                   </motion.g>
                 );
               })}
 
-              {/* the seam where measurement ends: 2025 marked in ink — a
-                  fact-boundary, not axis furniture (the boundary falls
-                  between the drawn 2024 and 2026 ridges) */}
+              {/* 2025 label in ink: where data turns into projection. sits between
+                  the drawn 2024 and 2026 ridges */}
               <motion.g
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -344,7 +328,6 @@ export default function Ridge() {
                 />
               </motion.g>
 
-              {/* age axis along the front */}
               {d3.range(0, 101, 20).map((age) => (
                 <text
                   key={age}
@@ -367,10 +350,9 @@ export default function Ridge() {
                 LIGHTER LINES · PROJECTION FROM 2025
               </text>
 
-              {/* the scale, taught by measuring a real feature: the front
-                  ridge's own peak. A key that states a fact needs no legend. */}
+              {/* scale key: measure the front ridge's peak instead of a separate legend */}
               {(() => {
-                const peak = ridges[0].points[10]; // 1950, age 10: 1,360k — the pre-war birth peak
+                const peak = ridges[0].points[10]; // 1950, age 10: 1,360k, the pre-war birth peak
                 const px = xScale(10);
                 const topY = INNER_H - amp(peak.pop);
                 return (

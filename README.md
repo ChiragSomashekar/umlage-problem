@@ -9,6 +9,7 @@ Germany's population from 1950 to 2100, drawn a few different ways. Same data ev
 - [The population pyramid](https://chiragsomashekar.github.io/umlage-problem/) with a slider. Drag through 150 years.
 - [The ridgeline poster](https://chiragsomashekar.github.io/umlage-problem/?ridge). One line for every second year. The red line follows everyone born in 1964.
 - [The ridgeline as a short video](https://chiragsomashekar.github.io/umlage-problem/?reel)
+- [The same film, step by step](https://chiragsomashekar.github.io/umlage-problem/?steps). Click through at your own pace.
 - [The pyramid as a short video](https://chiragsomashekar.github.io/umlage-problem/?promo)
 - [An experiment](https://chiragsomashekar.github.io/umlage-problem/?flow), not finished.
 

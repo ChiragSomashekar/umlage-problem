@@ -3,6 +3,6 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/umlage-problem/', // GitHub Pages serves from /<repo-name>/ — without this, blank page + 404s
+  base: '/umlage-problem/', // github pages serves from /<repo-name>/, without this the page is blank with 404s
   plugins: [react()],
 })
