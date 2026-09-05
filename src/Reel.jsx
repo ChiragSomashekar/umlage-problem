@@ -160,9 +160,10 @@ export default function Reel({ manual = false }) {
   const startYearCounter = () => {
     let i = 0;
     setYear(1950);
-    // the lines start drawing 0.9s in (after the 1950 line has moved to the front)
-    // and each one is invisible for its first frames, so the counter waits 1.1s
-    // and then ticks one year per line: it names a line once you can see it
+    // the lines start drawing 0.9s in (after the 1950 line has moved to the front),
+    // so the counter waits the same 0.9s and then ticks one year per line.
+    // note the axis ticks mark each line's baseline; the line itself sits above
+    // its tick by the number of newborns, about ten years of spacing
     const t0 = setTimeout(() => {
       const iv = setInterval(() => {
         i++;
@@ -170,7 +171,7 @@ export default function Reel({ manual = false }) {
         if (i >= 75) clearInterval(iv);
       }, 80);
       intervals.current.push(iv);
-    }, 1100);
+    }, 900);
     intervals.current.push(t0);
   };
   // age counter mirrors the ride keyframes above: moves between holds, stays put during them
