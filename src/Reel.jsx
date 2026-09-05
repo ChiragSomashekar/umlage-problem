@@ -160,12 +160,17 @@ export default function Reel({ manual = false }) {
   const startYearCounter = () => {
     let i = 0;
     setYear(1950);
-    const iv = setInterval(() => {
-      i++;
-      setYear(1950 + i * 2);
-      if (i >= 75) clearInterval(iv);
-    }, 80);
-    intervals.current.push(iv);
+    // the lines start drawing 0.9s in (after the 1950 line has moved to the front),
+    // so the counter waits the same 0.9s and then ticks one year per line
+    const t0 = setTimeout(() => {
+      const iv = setInterval(() => {
+        i++;
+        setYear(1950 + i * 2);
+        if (i >= 75) clearInterval(iv);
+      }, 80);
+      intervals.current.push(iv);
+    }, 900);
+    intervals.current.push(t0);
   };
   // age counter mirrors the ride keyframes above: moves between holds, stays put during them
   const startDotRide = () => {
