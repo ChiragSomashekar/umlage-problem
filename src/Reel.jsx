@@ -44,6 +44,8 @@ export default function Reel({ manual = false }) {
   const [dotAge, setDotAge] = useState(null);
   const [hoverAge, setHoverAge] = useState(null); // ?steps only: reading one age off the 1950 line
   const intervals = useRef([]);
+  const started = useRef(new Set()); // years whose line has begun to draw
+  const [stackRun, setStackRun] = useState(0); // bump to replay the stacking in ?steps
 
   const { ridges, thread, xScale, amp, ampBig, cohort } = useMemo(() => {
     const years = d3.range(1950, 2101, YEAR_STEP);
@@ -157,22 +159,13 @@ export default function Reel({ manual = false }) {
     intervals.current = [];
   };
   // year counter runs with the stacking (75 ridges x 80ms)
+  // the year counter is set by the lines themselves: each line writes its year
+  // on the first frame it has any visible length (see onUpdate on the strokes).
+  // the axis ticks mark each line's baseline; the line sits above its tick by
+  // the number of newborns, about ten years of spacing
   const startYearCounter = () => {
-    let i = 0;
+    started.current.clear();
     setYear(1950);
-    // the lines start drawing 0.9s in (after the 1950 line has moved to the front),
-    // so the counter waits the same 0.9s and then ticks one year per line.
-    // note the axis ticks mark each line's baseline; the line itself sits above
-    // its tick by the number of newborns, about ten years of spacing
-    const t0 = setTimeout(() => {
-      const iv = setInterval(() => {
-        i++;
-        setYear(1950 + i * 2);
-        if (i >= 75) clearInterval(iv);
-      }, 80);
-      intervals.current.push(iv);
-    }, 900);
-    intervals.current.push(t0);
   };
   // age counter mirrors the ride keyframes above: moves between holds, stays put during them
   const startDotRide = () => {
@@ -245,6 +238,7 @@ export default function Reel({ manual = false }) {
       setDotAge(null);
     } else if (s === 2) {
       setPhase(1);
+      setStackRun((n) => n + 1);
       startYearCounter();
       setDotAge(null);
     } else if (s === 3) {
@@ -331,8 +325,9 @@ export default function Reel({ manual = false }) {
             <g transform={`translate(${M.left}, ${M.top})`}>
               {/* other 75 years. rendered back to front so nearer years cover the ones
                   behind, but the draw delay runs front to back with the year counter */}
-              {phase >= 1 &&
-                [...ridges.slice(1)].reverse().map((r) => {
+              {phase >= 1 && (
+                <g key={`stack-${stackRun}`}>
+                {[...ridges.slice(1)].reverse().map((r) => {
                   const projected = r.year >= 2025;
                   const k = (r.year - 1952) / YEAR_STEP;
                   return (
@@ -353,10 +348,18 @@ export default function Reel({ manual = false }) {
                         initial={{ pathLength: 0 }}
                         animate={{ pathLength: 1 }}
                         transition={{ duration: 0.5, delay: 0.9 + k * 0.08, ease: "easeOut" }}
+                        onUpdate={(latest) => {
+                          if (latest.pathLength > 0 && !started.current.has(r.year)) {
+                            started.current.add(r.year);
+                            setYear(r.year);
+                          }
+                        }}
                       />
                     </g>
                   );
                 })}
+                </g>
+              )}
 
               {/* the 1950 line: drawn large first, then morphs to its place at the front */}
               <motion.path
